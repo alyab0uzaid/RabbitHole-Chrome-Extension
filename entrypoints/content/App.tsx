@@ -68,15 +68,20 @@ export default () => {
     return (
         <div className={theme}>
             {showContent && <div
-                className="fixed top-0 right-0 h-screen w-[400px] bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
-                <Header headTitle={headTitle}/>
-                <Sidebar closeContent={() => {
-                    setShowContent(false)
-                }} sideNav={(sidebarType: SidebarType) => {
-                    setSidebarType(sidebarType)
-                    setHeadTitle(sidebarType)
-                }}/>
-                <main className="mr-14 grid gap-4 p-4">
+                className="fixed top-0 right-0 h-screen w-[400px] bg-background z-[1000000000000] rounded-l-xl shadow-2xl"
+                style={{ pointerEvents: 'none' }}>
+                <div style={{ pointerEvents: 'auto' }}>
+                    <Header headTitle={headTitle}/>
+                </div>
+                <div style={{ pointerEvents: 'auto' }}>
+                    <Sidebar closeContent={() => {
+                        setShowContent(false)
+                    }} sideNav={(sidebarType: SidebarType) => {
+                        setSidebarType(sidebarType)
+                        setHeadTitle(sidebarType)
+                    }}/>
+                </div>
+                <main className="mr-14 grid gap-4 p-4" style={{ pointerEvents: 'auto' }}>
                     {sidebarType === SidebarType.home && <Home/>}
                     {sidebarType === SidebarType.settings && <SettingsPage/>}
                 </main>

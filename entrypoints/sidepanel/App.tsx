@@ -39,6 +39,10 @@ export default () => {
                 i18n.changeLanguage(message.content)
             } else if (message.messageType == MessageType.changeTheme) {
                 toggleTheme(message.content)
+            } else if (message.messageType == MessageType.openSidePanel) {
+                // Automatically switch to Wikipedia view when new text is selected
+                setSidebarType(SidebarType.wikipedia);
+                setHeadTitle('wikipedia');
             }
         });
 

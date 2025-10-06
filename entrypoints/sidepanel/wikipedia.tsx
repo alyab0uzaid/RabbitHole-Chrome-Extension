@@ -17,6 +17,21 @@ export const WikipediaViewer: React.FC = () => {
 
     useEffect(() => {
         init();
+        
+        // Listen for new text selection messages
+        const messageListener = (message: any) => {
+            if (message.messageType === 'openSidePanel') {
+                // Reload with new text when openSidePanel message is received
+                init();
+            }
+        };
+        
+        browser.runtime.onMessage.addListener(messageListener);
+        
+        // Cleanup listener on unmount
+        return () => {
+            browser.runtime.onMessage.removeListener(messageListener);
+        };
     }, []);
 
     async function init() {

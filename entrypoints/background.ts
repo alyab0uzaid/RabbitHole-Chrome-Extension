@@ -26,6 +26,16 @@ export default defineBackground(() => {
             if (sender.tab?.windowId) {
                 // @ts-ignore
                 browser.sidePanel.open({ windowId: sender.tab.windowId });
+                
+                // Send message to sidepanel to switch to Wikipedia view
+                setTimeout(() => {
+                    browser.runtime.sendMessage({
+                        messageType: MessageType.openSidePanel,
+                        selectedText: lastSelectedText
+                    }).catch((error) => {
+                        console.log("Could not send message to sidepanel:", error);
+                    });
+                }, 100); // Small delay to ensure sidepanel is loaded
             }
             return true;
         } else if (message.messageType === MessageType.getSelectedText) {

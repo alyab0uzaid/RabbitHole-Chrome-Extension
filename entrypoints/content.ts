@@ -58,10 +58,7 @@ export default defineContentScript({
             // Create a highlight element
             const highlightElement = document.createElement('span');
             highlightElement.className = 'rabbithole-highlight';
-            highlightElement.style.backgroundColor = '#fff3cd';
-            highlightElement.style.borderBottom = '2px solid #ffc107';
             highlightElement.style.cursor = 'pointer';
-            highlightElement.style.transition = 'background-color 0.2s ease';
             
             try {
                 range.surroundContents(highlightElement);
@@ -78,12 +75,10 @@ export default defineContentScript({
                 
                 // Add hover event listeners
                 highlightElement.addEventListener('mouseenter', (e) => {
-                    highlightElement.style.backgroundColor = '#ffeaa7';
                     showPreviewCard(selectedText, highlightElement);
                 });
                 
                 highlightElement.addEventListener('mouseleave', (e) => {
-                    highlightElement.style.backgroundColor = '#fff3cd';
                     // Check if mouse is moving to tooltip
                     const relatedTarget = e.relatedTarget as Node;
                     if (previewCard && previewCard.contains(relatedTarget)) {
