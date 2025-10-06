@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "RabbitHole",
+    "version": "1.0.0",
+    "description": "Wikipedia preview and research tool",
+    "permissions": [
+      "sidePanel",
+      "activeTab"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "content_scripts": [
+      {
+        "matches": ["<all_urls>"],
+        "js": ["content.js"],
+        "css": ["content.css"],
+        "run_at": "document_end"
+      }
+    ],
+    "side_panel": {
+      "default_path": "sidepanel/sidepanel.html"
+    }
+  }
