@@ -84,4 +84,5 @@ temp/
 CLAUDE.md
 *.claude.*
 .claude/
+.mcp.json
 old/

@@ -1,6 +1,49 @@
 import { browser } from "wxt/browser";
 import ExtMessage, { MessageType } from "@/entrypoints/types.ts";
 
+interface WikipediaPreviewData {
+    title: string;
+    excerpt: string;
+    image: string | null;
+    imageWidth: number;
+    imageHeight: number;
+    url: string;
+}
+
+async function fetchWikipediaPreview(searchText: string): Promise<WikipediaPreviewData> {
+    try {
+        // Use Wikipedia REST API for page summary
+        const searchUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(searchText)}`;
+        const response = await fetch(searchUrl);
+
+        if (!response.ok) {
+            throw new Error('Wikipedia API request failed');
+        }
+
+        const data = await response.json();
+
+        return {
+            title: data.title || searchText,
+            excerpt: data.extract || 'No preview available.',
+            image: data.thumbnail?.source || null,
+            imageWidth: data.thumbnail?.width || 0,
+            imageHeight: data.thumbnail?.height || 0,
+            url: data.content_urls?.desktop?.page || ''
+        };
+    } catch (error) {
+        console.error('Error fetching Wikipedia data:', error);
+        // Return fallback data
+        return {
+            title: searchText,
+            excerpt: 'Could not load Wikipedia preview. Click to search in sidebar.',
+            image: null,
+            imageWidth: 0,
+            imageHeight: 0,
+            url: ''
+        };
+    }
+}
+
 export default defineContentScript({
     matches: ['*://*/*'],
     runAt: 'document_end',
@@ -103,187 +146,215 @@ export default defineContentScript({
             return previewCard.matches(':hover') || previewCard.contains(document.querySelector(':hover') as Node);
         }
 
-        function showPreviewCard(text: string, highlightedElement: HTMLElement) {
+        async function showPreviewCard(text: string, highlightedElement: HTMLElement) {
             // Remove old card if exists
             if (previewCard) {
                 previewCard.remove();
             }
-            
-            // Create new tooltip with shadcn-inspired styling
+
+            // Fetch Wikipedia data
+            const wikiData = await fetchWikipediaPreview(text);
+
+            // Determine layout based on image aspect ratio
+            // Landscape layout (320×398): aspect ratio >= 1.3
+            // Portrait layout (450×250): aspect ratio < 1.3 OR no image
+            const aspectRatio = wikiData.image && wikiData.imageHeight > 0
+                ? wikiData.imageWidth / wikiData.imageHeight
+                : 0;
+            const isLandscape = aspectRatio >= 1.3;
+            const cardWidth = isLandscape ? 320 : 450;
+            const cardHeight = isLandscape ? 398 : 250;
+
+            // Create Wikipedia preview card
             previewCard = document.createElement('div');
-            previewCard.className = 'rabbithole-tooltip';
-            previewCard.innerHTML = `
-                <div class="tooltip-content">
-                    <div class="tooltip-text">Selected: "${text}"</div>
-                    <button class="tooltip-button">Open in Sidebar</button>
-                </div>
-                <div class="tooltip-arrow"></div>
-            `;
+            previewCard.className = 'rabbithole-wikipedia-card';
+
+            if (isLandscape) {
+                // Landscape layout: image on top
+                previewCard.innerHTML = `
+                    ${wikiData.image ? `<div class="wiki-card-image-top"><img src="${wikiData.image}" alt="${wikiData.title}"></div>` : ''}
+                    <div class="wiki-card-content">
+                        <h3 class="wiki-card-title">${wikiData.title}</h3>
+                        <p class="wiki-card-excerpt">${wikiData.excerpt}</p>
+                        <div class="wiki-card-footer">
+                            <span class="wiki-card-source">Wikipedia</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Portrait layout: image on left
+                previewCard.innerHTML = `
+                    <div class="wiki-card-horizontal">
+                        ${wikiData.image ? `<div class="wiki-card-image-left"><img src="${wikiData.image}" alt="${wikiData.title}"></div>` : ''}
+                        <div class="wiki-card-content-right">
+                            <h3 class="wiki-card-title">${wikiData.title}</h3>
+                            <p class="wiki-card-excerpt">${wikiData.excerpt}</p>
+                            <div class="wiki-card-footer">
+                                <span class="wiki-card-source">Wikipedia</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
             
             // Get positioning and determine placement
             const rect = highlightedElement.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            const tooltipWidth = 200; // Estimated tooltip width
-            const tooltipHeight = 80; // Estimated tooltip height
             const spacing = 10;
             
-            // Determine position quadrant
-            const isLeftSide = rect.left < viewportWidth / 2;
-            const isTopSide = rect.top < viewportHeight / 2;
-            
-            let tooltipX: number;
-            let tooltipY: number;
-            let arrowPosition: 'left' | 'right' | 'top' | 'bottom';
-            let arrowSide: 'left' | 'right';
-            
-            if (isTopSide) {
-                // Position tooltip below highlighted text
-                tooltipY = rect.bottom + spacing;
-                arrowPosition = 'top';
-                
-                if (isLeftSide) {
-                    // Top-left: tooltip below, arrow on left side
-                    tooltipX = Math.max(spacing, rect.left);
-                    arrowSide = 'left';
-                } else {
-                    // Top-right: tooltip below, arrow on right side
-                    tooltipX = Math.min(viewportWidth - tooltipWidth - spacing, rect.right - tooltipWidth);
-                    arrowSide = 'right';
-                }
-            } else {
-                // Position tooltip above highlighted text with more spacing
-                tooltipY = rect.top - tooltipHeight - (spacing * 2);
-                arrowPosition = 'bottom';
-                
-                if (isLeftSide) {
-                    // Bottom-left: tooltip above, arrow on left side
-                    tooltipX = Math.max(spacing, rect.left);
-                    arrowSide = 'left';
-                } else {
-                    // Bottom-right: tooltip above, arrow on right side
-                    tooltipX = Math.min(viewportWidth - tooltipWidth - spacing, rect.right - tooltipWidth);
-                    arrowSide = 'right';
-                }
+            // Calculate optimal position
+            let cardX: number;
+            let cardY: number;
+
+            // Center card horizontally relative to highlighted text
+            const highlightCenterX = rect.left + rect.width / 2;
+            cardX = highlightCenterX - (cardWidth / 2);
+
+            // Ensure card stays within viewport
+            cardX = Math.max(spacing, Math.min(cardX, viewportWidth - cardWidth - spacing));
+
+            // Position below highlighted text by default
+            cardY = rect.bottom + spacing;
+
+            // If not enough space below, position above
+            if (cardY + cardHeight > viewportHeight - spacing) {
+                cardY = rect.top - cardHeight - spacing;
             }
             
-            // Apply shadcn-inspired tooltip styles
+            // Apply Wikipedia card styles
             Object.assign(previewCard.style, {
                 position: 'fixed',
-                left: tooltipX + 'px',
-                top: tooltipY + 'px',
+                left: cardX + 'px',
+                top: cardY + 'px',
+                width: cardWidth + 'px',
+                height: cardHeight + 'px',
                 zIndex: '999999',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                 pointerEvents: 'auto',
                 opacity: '0',
-                transform: 'translateY(-4px) scale(0.95)',
-                transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
-                maxWidth: '320px',
-                minWidth: '200px'
+                transform: 'scale(0.95)',
+                transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
+                background: '#ffffff',
+                border: '1px solid #a2a9b1',
+                borderRadius: '2px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                overflow: 'hidden',
+                cursor: 'pointer'
             });
 
-            // Style the tooltip content
-            const tooltipContent = previewCard.querySelector('.tooltip-content') as HTMLElement;
-            if (tooltipContent) {
-                Object.assign(tooltipContent.style, {
-                    background: 'hsl(0 0% 100%)',
-                    border: '1px solid hsl(214.3 31.8% 91.4%)',
-                    borderRadius: '6px',
-                    padding: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            // Style image top (landscape)
+            const imageTop = previewCard.querySelector('.wiki-card-image-top') as HTMLElement;
+            if (imageTop) {
+                Object.assign(imageTop.style, {
+                    width: '100%',
+                    height: '192px',
+                    overflow: 'hidden',
+                    background: '#eaecf0'
+                });
+                const img = imageTop.querySelector('img') as HTMLImageElement;
+                if (img) {
+                    Object.assign(img.style, {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                    });
+                }
+            }
+
+            // Style horizontal container (portrait)
+            const horizontal = previewCard.querySelector('.wiki-card-horizontal') as HTMLElement;
+            if (horizontal) {
+                Object.assign(horizontal.style, {
+                    display: 'flex',
+                    height: '100%'
+                });
+            }
+
+            // Style image left (portrait)
+            const imageLeft = previewCard.querySelector('.wiki-card-image-left') as HTMLElement;
+            if (imageLeft) {
+                Object.assign(imageLeft.style, {
+                    width: '203px',
+                    height: '100%',
+                    overflow: 'hidden',
+                    flexShrink: '0',
+                    background: '#eaecf0'
+                });
+                const img = imageLeft.querySelector('img') as HTMLImageElement;
+                if (img) {
+                    Object.assign(img.style, {
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                    });
+                }
+            }
+
+            // Style content area
+            const content = previewCard.querySelector('.wiki-card-content, .wiki-card-content-right') as HTMLElement;
+            if (content) {
+                Object.assign(content.style, {
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: '1',
                     overflow: 'hidden'
                 });
             }
 
-            // Style the text
-            const textElement = previewCard.querySelector('.tooltip-text') as HTMLElement;
-            if (textElement) {
-                Object.assign(textElement.style, {
-                    marginBottom: '8px',
+            // Style title
+            const title = previewCard.querySelector('.wiki-card-title') as HTMLElement;
+            if (title) {
+                Object.assign(title.style, {
+                    margin: '0 0 8px 0',
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    lineHeight: '1.3',
+                    color: '#202122',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: '2',
+                    WebkitBoxOrient: 'vertical'
+                });
+            }
+
+            // Style excerpt
+            const excerpt = previewCard.querySelector('.wiki-card-excerpt') as HTMLElement;
+            if (excerpt) {
+                Object.assign(excerpt.style, {
+                    margin: '0 0 12px 0',
                     fontSize: '14px',
-                    color: 'hsl(222.2 84% 4.9%)',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
+                    color: '#54595d',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: isLandscape ? '5' : '4',
+                    WebkitBoxOrient: 'vertical',
+                    flex: '1'
+                });
+            }
+
+            // Style footer
+            const footer = previewCard.querySelector('.wiki-card-footer') as HTMLElement;
+            if (footer) {
+                Object.assign(footer.style, {
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginTop: 'auto'
+                });
+            }
+
+            // Style source
+            const source = previewCard.querySelector('.wiki-card-source') as HTMLElement;
+            if (source) {
+                Object.assign(source.style, {
+                    fontSize: '12px',
+                    color: '#72777d',
                     fontWeight: '500'
                 });
-            }
-
-            // Style the button with shadcn button styling
-            const button = previewCard.querySelector('.tooltip-button') as HTMLButtonElement;
-            if (button) {
-                Object.assign(button.style, {
-                    width: '100%',
-                    height: '36px',
-                    padding: '0 16px',
-                    background: 'hsl(222.2 84% 4.9%)',
-                    color: 'hsl(210 40% 98%)',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'background-color 0.2s ease',
-                    whiteSpace: 'nowrap'
-                });
-
-                // Add hover effects
-                button.addEventListener('mouseenter', () => {
-                    button.style.background = 'hsl(222.2 84% 4.9% / 0.9)';
-                });
-                button.addEventListener('mouseleave', () => {
-                    button.style.background = 'hsl(222.2 84% 4.9%)';
-                });
-            }
-
-            // Style the tooltip arrow based on position
-            const arrow = previewCard.querySelector('.tooltip-arrow') as HTMLElement;
-            if (arrow) {
-                // Calculate arrow position relative to highlighted text
-                const highlightCenterX = rect.left + rect.width / 2;
-                const tooltipLeft = parseFloat(previewCard.style.left);
-                
-                // Calculate where the arrow should be positioned on the tooltip
-                let arrowOffset: number;
-                if (arrowSide === 'left') {
-                    arrowOffset = Math.max(10, Math.min(20, highlightCenterX - tooltipLeft));
-                } else {
-                    arrowOffset = Math.max(tooltipWidth - 30, Math.min(tooltipWidth - 10, highlightCenterX - tooltipLeft));
-                }
-                
-                // Set arrow styles based on position
-                if (arrowPosition === 'top') {
-                    // Arrow pointing up (tooltip below text)
-                    Object.assign(arrow.style, {
-                        position: 'absolute',
-                        top: '-5px',
-                        left: arrowOffset + 'px',
-                        width: '10px',
-                        height: '10px',
-                        background: 'hsl(0 0% 100%)',
-                        border: '1px solid hsl(214.3 31.8% 91.4%)',
-                        borderRight: 'none',
-                        borderBottom: 'none',
-                        transform: 'rotate(45deg)',
-                        zIndex: '1000000'
-                    });
-                } else {
-                    // Arrow pointing down (tooltip above text)
-                    Object.assign(arrow.style, {
-                        position: 'absolute',
-                        bottom: '-5px',
-                        left: arrowOffset + 'px',
-                        width: '10px',
-                        height: '10px',
-                        background: 'hsl(0 0% 100%)',
-                        border: '1px solid hsl(214.3 31.8% 91.4%)',
-                        borderLeft: 'none',
-                        borderTop: 'none',
-                        transform: 'rotate(45deg)',
-                        zIndex: '1000000'
-                    });
-                }
             }
             
             document.body.appendChild(previewCard);
@@ -309,56 +380,48 @@ export default defineContentScript({
             requestAnimationFrame(() => {
                 if (previewCard) {
                     previewCard.style.opacity = '1';
-                    previewCard.style.transform = 'translateY(0) scale(1)';
+                    previewCard.style.transform = 'scale(1)';
                 }
             });
-            
-            // Add click handlers
-            if (button) {
-                button.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    ignoreNextMouseUp = true;
+
+            // Add click handler to entire card
+            previewCard.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                console.log('Card clicked, opening sidebar...');
+
+                const message: ExtMessage = {
+                    messageType: MessageType.openSidePanel,
+                    selectedText: text
+                };
+
+                browser.runtime.sendMessage(message).then(() => {
+                    console.log('Message sent successfully');
+                }).catch((error) => {
+                    console.error('Error sending message:', error);
                 });
-                
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    console.log('Button clicked, sending message...');
-                    
-                    const message: ExtMessage = {
-                        messageType: MessageType.openSidePanel,
-                        selectedText: text
-                    };
-                    
-                    browser.runtime.sendMessage(message).then(() => {
-                        console.log('Message sent successfully');
-                    }).catch((error) => {
-                        console.error('Error sending message:', error);
-                    });
-                    
-                    if (previewCard) {
-                        previewCard.remove();
-                        previewCard = null;
-                    }
-                });
-            }
+
+                if (previewCard) {
+                    previewCard.remove();
+                    previewCard = null;
+                }
+            });
         }
 
         function hidePreviewCard() {
             if (previewCard) {
                 // Animate out
                 previewCard.style.opacity = '0';
-                previewCard.style.transform = 'translateY(-4px) scale(0.95)';
-                
+                previewCard.style.transform = 'scale(0.95)';
+
                 // Remove after animation
                 setTimeout(() => {
                     if (previewCard) {
                         previewCard.remove();
                         previewCard = null;
                     }
-                }, 150);
+                }, 200);
             }
         }
 
