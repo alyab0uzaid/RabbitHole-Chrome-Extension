@@ -1,0 +1,8 @@
+// This content script is disabled in favor of the text-selection.ts content script
+// which handles the Wikipedia preview functionality
+export default defineContentScript({
+    matches: ['*://*/*'],
+    main() {
+        // Empty - functionality moved to text-selection.ts
+    },
+});
