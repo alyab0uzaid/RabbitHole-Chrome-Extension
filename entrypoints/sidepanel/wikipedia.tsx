@@ -110,18 +110,40 @@ export const WikipediaViewer: React.FC = () => {
 
     if (state.articleTitle) {
         return (
-            <iframe
-                src={`https://en.wikipedia.org/wiki/${encodeURIComponent(state.articleTitle.replace(/ /g, '_'))}`}
-                style={{
-                    width: '100%',
-                    height: '100vh',
-                    border: 'none',
-                    margin: 0,
-                    padding: 0
-                }}
-                title={`Wikipedia article: ${state.articleTitle}`}
-            />
-
+            <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+                <iframe
+                    src={`https://en.m.wikipedia.org/wiki/${encodeURIComponent(state.articleTitle.replace(/ /g, '_'))}`}
+                    style={{
+                        width: '100%',
+                        height: '100vh',
+                        border: 'none',
+                        margin: 0,
+                        padding: 0
+                    }}
+                    title={`Wikipedia article: ${state.articleTitle}`}
+                />
+                <style>
+                    {`
+                        iframe {
+                            /* Hide mobile Wikipedia header elements */
+                            transform: translateY(-60px);
+                            height: calc(100vh + 60px) !important;
+                        }
+                        
+                        /* Additional CSS to hide header elements if accessible */
+                        iframe::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            height: 60px;
+                            background: white;
+                            z-index: 1000;
+                        }
+                    `}
+                </style>
+            </div>
         );
     }
 
