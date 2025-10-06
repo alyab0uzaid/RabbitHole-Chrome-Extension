@@ -196,14 +196,24 @@ export default defineContentScript({
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
             const spacing = 10;
-            
+            const arrowInset = 20; // Arrow is 20px from the edge of card
+
             // Calculate optimal position
             let cardX: number;
             let cardY: number;
 
-            // Center card horizontally relative to highlighted text
+            // Determine which side of the page the highlighted text is on
             const highlightCenterX = rect.left + rect.width / 2;
-            cardX = highlightCenterX - (cardWidth / 2);
+            const isLeftSide = highlightCenterX < viewportWidth / 2;
+
+            // Position card so arrow (20px from edge) points at highlighted text
+            if (isLeftSide) {
+                // Text on left side: arrow 20px from left edge of card
+                cardX = highlightCenterX - arrowInset;
+            } else {
+                // Text on right side: arrow 20px from right edge of card
+                cardX = highlightCenterX - (cardWidth - arrowInset);
+            }
 
             // Ensure card stays within viewport
             cardX = Math.max(spacing, Math.min(cardX, viewportWidth - cardWidth - spacing));
@@ -217,12 +227,9 @@ export default defineContentScript({
                 cardY = rect.top - cardHeight - spacing;
             }
 
-            // Calculate arrow position relative to card
+            // Calculate arrow position - always at highlightCenterX
             const arrowCenterX = highlightCenterX - cardX;
             const arrowLeftPercent = (arrowCenterX / cardWidth) * 100;
-
-            // Clamp arrow position to stay within card bounds (with margins)
-            const clampedArrowPercent = Math.max(5, Math.min(95, arrowLeftPercent));
 
             // Create clip-path for arrow notch
             let clipPath: string;
@@ -234,18 +241,18 @@ export default defineContentScript({
                     0% 0%,
                     100% 0%,
                     100% calc(100% - ${arrowSize}px),
-                    calc(${clampedArrowPercent}% + ${arrowSize}px) calc(100% - ${arrowSize}px),
-                    ${clampedArrowPercent}% 100%,
-                    calc(${clampedArrowPercent}% - ${arrowSize}px) calc(100% - ${arrowSize}px),
+                    calc(${arrowLeftPercent}% + ${arrowSize}px) calc(100% - ${arrowSize}px),
+                    ${arrowLeftPercent}% 100%,
+                    calc(${arrowLeftPercent}% - ${arrowSize}px) calc(100% - ${arrowSize}px),
                     0% calc(100% - ${arrowSize}px)
                 )`;
             } else {
                 // Arrow pointing up from top of card
                 clipPath = `polygon(
                     0% ${arrowSize}px,
-                    calc(${clampedArrowPercent}% - ${arrowSize}px) ${arrowSize}px,
-                    ${clampedArrowPercent}% 0%,
-                    calc(${clampedArrowPercent}% + ${arrowSize}px) ${arrowSize}px,
+                    calc(${arrowLeftPercent}% - ${arrowSize}px) ${arrowSize}px,
+                    ${arrowLeftPercent}% 0%,
+                    calc(${arrowLeftPercent}% + ${arrowSize}px) ${arrowSize}px,
                     100% ${arrowSize}px,
                     100% 100%,
                     0% 100%
