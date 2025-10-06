@@ -82,10 +82,12 @@ export const WikipediaViewer: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100vh',
-                gap: '8px'
+                width: '100%'
             }}>
-                <Spinner />
-                <span>Loading Wikipedia article...</span>
+                <Spinner style={{
+                    width: '48px',
+                    height: '48px'
+                }} />
             </div>
         );
     }
