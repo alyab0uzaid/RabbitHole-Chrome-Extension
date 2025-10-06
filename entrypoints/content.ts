@@ -176,9 +176,6 @@ export default defineContentScript({
                     <div class="wiki-card-content">
                         <h3 class="wiki-card-title">${wikiData.title}</h3>
                         <p class="wiki-card-excerpt">${wikiData.excerpt}</p>
-                        <div class="wiki-card-footer">
-                            <span class="wiki-card-source">Wikipedia</span>
-                        </div>
                     </div>
                 `;
             } else {
@@ -189,9 +186,6 @@ export default defineContentScript({
                         <div class="wiki-card-content-right">
                             <h3 class="wiki-card-title">${wikiData.title}</h3>
                             <p class="wiki-card-excerpt">${wikiData.excerpt}</p>
-                            <div class="wiki-card-footer">
-                                <span class="wiki-card-source">Wikipedia</span>
-                            </div>
                         </div>
                     </div>
                 `;
@@ -218,11 +212,47 @@ export default defineContentScript({
             cardY = rect.bottom + spacing;
 
             // If not enough space below, position above
-            if (cardY + cardHeight > viewportHeight - spacing) {
+            const isCardAbove = cardY + cardHeight > viewportHeight - spacing;
+            if (isCardAbove) {
                 cardY = rect.top - cardHeight - spacing;
             }
-            
-            // Apply Wikipedia card styles
+
+            // Calculate arrow position relative to card
+            const arrowCenterX = highlightCenterX - cardX;
+            const arrowLeftPercent = (arrowCenterX / cardWidth) * 100;
+
+            // Clamp arrow position to stay within card bounds (with margins)
+            const clampedArrowPercent = Math.max(5, Math.min(95, arrowLeftPercent));
+
+            // Create clip-path for arrow notch
+            let clipPath: string;
+            const arrowSize = 10; // Size of the arrow triangle
+
+            if (isCardAbove) {
+                // Arrow pointing down from bottom of card
+                clipPath = `polygon(
+                    0% 0%,
+                    100% 0%,
+                    100% calc(100% - ${arrowSize}px),
+                    calc(${clampedArrowPercent}% + ${arrowSize}px) calc(100% - ${arrowSize}px),
+                    ${clampedArrowPercent}% 100%,
+                    calc(${clampedArrowPercent}% - ${arrowSize}px) calc(100% - ${arrowSize}px),
+                    0% calc(100% - ${arrowSize}px)
+                )`;
+            } else {
+                // Arrow pointing up from top of card
+                clipPath = `polygon(
+                    0% ${arrowSize}px,
+                    calc(${clampedArrowPercent}% - ${arrowSize}px) ${arrowSize}px,
+                    ${clampedArrowPercent}% 0%,
+                    calc(${clampedArrowPercent}% + ${arrowSize}px) ${arrowSize}px,
+                    100% ${arrowSize}px,
+                    100% 100%,
+                    0% 100%
+                )`;
+            }
+
+            // Apply Wikipedia card styles with clip-path arrow
             Object.assign(previewCard.style, {
                 position: 'fixed',
                 left: cardX + 'px',
@@ -236,10 +266,10 @@ export default defineContentScript({
                 transform: 'scale(0.95)',
                 transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
                 background: '#ffffff',
-                border: '1px solid #a2a9b1',
-                borderRadius: '2px',
+                border: '1px solid #ebecf0',
+                borderRadius: '6px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                overflow: 'hidden',
+                clipPath: clipPath,
                 cursor: 'pointer'
             });
 
@@ -356,7 +386,7 @@ export default defineContentScript({
                     fontWeight: '500'
                 });
             }
-            
+
             document.body.appendChild(previewCard);
             
             // Add hover persistence to tooltip
