@@ -196,7 +196,7 @@ export default defineContentScript({
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
             const spacing = 10;
-            const arrowInset = 20; // Arrow is 20px from the edge of card
+            const arrowInset = 30; // Arrow is 20px from the edge of card
 
             // Calculate optimal position
             let cardX: number;
@@ -227,39 +227,8 @@ export default defineContentScript({
                 cardY = rect.top - cardHeight - spacing;
             }
 
-            // Calculate arrow position - always at highlightCenterX
-            const arrowCenterX = highlightCenterX - cardX;
-            const arrowLeftPercent = (arrowCenterX / cardWidth) * 100;
 
-            // Create clip-path for arrow notch
-            let clipPath: string;
-            const arrowSize = 10; // Size of the arrow triangle
-
-            if (isCardAbove) {
-                // Arrow pointing down from bottom of card
-                clipPath = `polygon(
-                    0% 0%,
-                    100% 0%,
-                    100% calc(100% - ${arrowSize}px),
-                    calc(${arrowLeftPercent}% + ${arrowSize}px) calc(100% - ${arrowSize}px),
-                    ${arrowLeftPercent}% 100%,
-                    calc(${arrowLeftPercent}% - ${arrowSize}px) calc(100% - ${arrowSize}px),
-                    0% calc(100% - ${arrowSize}px)
-                )`;
-            } else {
-                // Arrow pointing up from top of card
-                clipPath = `polygon(
-                    0% ${arrowSize}px,
-                    calc(${arrowLeftPercent}% - ${arrowSize}px) ${arrowSize}px,
-                    ${arrowLeftPercent}% 0%,
-                    calc(${arrowLeftPercent}% + ${arrowSize}px) ${arrowSize}px,
-                    100% ${arrowSize}px,
-                    100% 100%,
-                    0% 100%
-                )`;
-            }
-
-            // Apply Wikipedia card styles with clip-path arrow
+            // Apply Wikipedia card styles
             Object.assign(previewCard.style, {
                 position: 'fixed',
                 left: cardX + 'px',
@@ -272,12 +241,12 @@ export default defineContentScript({
                 opacity: '0',
                 transform: 'scale(0.95)',
                 transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
+                cursor: 'pointer',
                 background: '#ffffff',
                 border: '1px solid #ebecf0',
                 borderRadius: '6px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                clipPath: clipPath,
-                cursor: 'pointer'
+                overflow: 'hidden'
             });
 
             // Style image top (landscape)
