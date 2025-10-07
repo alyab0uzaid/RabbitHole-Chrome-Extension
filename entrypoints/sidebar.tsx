@@ -4,10 +4,12 @@ import {IoMdCloseCircle} from "react-icons/io";
 import {IoIosSettings} from "react-icons/io";
 import {RiDashboardFill} from "react-icons/ri";
 import {BookOpen} from "lucide-react";
+import {Network} from "lucide-react";
 
 export enum SidebarType {
     'home' = 'home',
     'wikipedia' = 'wikipedia',
+    'tree' = 'tree',
     'settings' = 'settings'
 }
 
@@ -66,6 +68,25 @@ const Sidebar = (
                             </a>
                         </TooltipTrigger>
                         <TooltipContent side="right">Wikipedia</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <a
+                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.tree ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
+                                href="#" onClick={() => {
+                                setSidebarType(SidebarType.tree)
+                                sideNav(SidebarType.tree)
+                            }}
+                            >
+                                <Network
+                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
+                                <span className="sr-only">Tree</span>
+                            </a>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">Research Tree</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </nav>

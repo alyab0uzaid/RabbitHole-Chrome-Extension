@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // See https://wxt.dev/api/config.html
 export default defineConfig({
     manifest: {
-        permissions: ["activeTab", "scripting", "sidePanel", "storage", "tabs"],
+        permissions: ["activeTab", "scripting", "sidePanel", "storage", "tabs", "webNavigation"],
         action: {},
         name: 'RabbitHole',
         description: 'Wikipedia preview and research tool',

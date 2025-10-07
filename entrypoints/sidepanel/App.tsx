@@ -12,6 +12,8 @@ import {WikipediaViewer} from "@/entrypoints/sidepanel/wikipedia.tsx";
 import {useTheme} from "@/components/theme-provider.tsx";
 import {useTranslation} from 'react-i18next';
 import Header from "@/entrypoints/sidepanel/header.tsx";
+import TreeView from "@/components/tree/TreeView.tsx";
+import {TreeProvider} from "@/lib/tree-context.tsx";
 
 export default () => {
     const [showButton, setShowButton] = useState(false)
@@ -50,21 +52,27 @@ export default () => {
     }, []);
 
     return (
-        <div className={theme}>
-            {<div
-                className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
-                <Header headTitle={headTitle}/>
-                <Sidebar sideNav={(sidebarType: SidebarType) => {
-                    setSidebarType(sidebarType);
-                    setHeadTitle(sidebarType);
-                }}/>
-                <main className="mr-14 grid gap-4 p-4 md:gap-8 md:p-8">
-                    {sidebarType === SidebarType.home && <Home/>}
-                    {sidebarType === SidebarType.wikipedia && <WikipediaViewer/>}
-                    {sidebarType === SidebarType.settings && <SettingsPage/>}
-                </main>
-            </div>
-            }
+        <TreeProvider>
+            <div className={theme}>
+                {<div
+                    className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
+                    <Header headTitle={headTitle}/>
+                    <Sidebar sideNav={(sidebarType: SidebarType) => {
+                        setSidebarType(sidebarType);
+                        setHeadTitle(sidebarType);
+                    }}/>
+                    <main className="mr-14 grid gap-4 p-4 md:gap-8 md:p-8">
+                        {sidebarType === SidebarType.home && <Home/>}
+                        {sidebarType === SidebarType.wikipedia && <WikipediaViewer/>}
+                        {sidebarType === SidebarType.tree && (
+                            <div className="h-[calc(100vh-8rem)]">
+                                <TreeView/>
+                            </div>
+                        )}
+                        {sidebarType === SidebarType.settings && <SettingsPage/>}
+                    </main>
+                </div>
+                }
             {showButton &&
                 <Button className="absolute z-[100000]" style={buttonStyle}>send Message</Button>
             }
@@ -73,7 +81,7 @@ export default () => {
                       className={`absolute z-[100000] w-[300px] h-[200px] ${showCard ? 'block' : 'hidden'}`}
                       style={cardStyle}></Card>
             }
-        </div>
-
+            </div>
+        </TreeProvider>
     )
 };
