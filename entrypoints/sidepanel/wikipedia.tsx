@@ -192,35 +192,38 @@ export const WikipediaViewer: React.FC = () => {
                     <Network className="h-5 w-5" />
                 </Button>
 
-                {/* Tree panel */}
-                {showTree && (
-                    <div className="fixed top-0 right-0 h-screen w-96 bg-background border-l shadow-2xl z-[9998] transition-transform">
-                        <div className="flex items-center justify-between p-4 border-b">
-                            <h2 className="text-lg font-semibold">Research Tree</h2>
-                            <Button
-                                onClick={() => setShowTree(false)}
-                                variant="ghost"
-                                size="sm"
-                            >
-                                Close
-                            </Button>
-                        </div>
-                        <div className="h-[calc(100vh-4rem)]">
-                            <TreeView onNodeClick={(nodeId, nodeData) => {
-                                // Navigate to the article when clicking a node (don't add new node)
-                                console.log('[WikipediaViewer] Tree node clicked:', nodeData.title);
-                                setActiveNode(nodeId);
-
-                                // Update iframe to show this article
-                                setState(prev => ({
-                                    ...prev,
-                                    articleTitle: nodeData.title,
-                                    articleUrl: nodeData.url
-                                }));
-                            }} />
-                        </div>
+                {/* Tree panel - always mounted but hidden when closed */}
+                <div
+                    className="fixed top-0 right-0 h-screen w-96 bg-background border-l shadow-2xl z-[9998] transition-transform duration-200 ease-linear"
+                    style={{
+                        transform: showTree ? 'translateX(0)' : 'translateX(100%)'
+                    }}
+                >
+                    <div className="flex items-center justify-between p-4 border-b">
+                        <h2 className="text-lg font-semibold">Research Tree</h2>
+                        <Button
+                            onClick={() => setShowTree(false)}
+                            variant="ghost"
+                            size="sm"
+                        >
+                            Close
+                        </Button>
                     </div>
-                )}
+                    <div className="h-[calc(100vh-4rem)]">
+                        <TreeView onNodeClick={(nodeId, nodeData) => {
+                            // Navigate to the article when clicking a node (don't add new node)
+                            console.log('[WikipediaViewer] Tree node clicked:', nodeData.title);
+                            setActiveNode(nodeId);
+
+                            // Update iframe to show this article
+                            setState(prev => ({
+                                ...prev,
+                                articleTitle: nodeData.title,
+                                articleUrl: nodeData.url
+                            }));
+                        }} />
+                    </div>
+                </div>
 
                 <iframe
                     ref={iframeRef}

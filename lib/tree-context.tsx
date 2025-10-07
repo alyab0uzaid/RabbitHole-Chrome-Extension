@@ -27,6 +27,8 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
 
   // Add a new node to the tree
   const addNode = useCallback((title: string, url: string, context: SourceContext): string => {
+    console.log('[TreeContext] addNode called:', { title, context, currentNodes: nodes.length });
+
     // Determine parent based on context type and current active node
     let parentId: string | null = null;
 
@@ -52,11 +54,16 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
       timestamp: Date.now()
     };
 
-    setNodes(prev => [...prev, newNode]);
+    console.log('[TreeContext] Adding node:', newNode);
+    setNodes(prev => {
+      const updated = [...prev, newNode];
+      console.log('[TreeContext] Nodes updated, count:', updated.length);
+      return updated;
+    });
     setActiveNodeId(newNode.id);
 
     return newNode.id;
-  }, []);
+  }, [nodes.length]);
 
   // Set active node (for tree navigation)
   const setActiveNode = useCallback((nodeId: string | null) => {

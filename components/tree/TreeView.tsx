@@ -105,6 +105,8 @@ interface TreeViewProps {
 export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const { nodes: treeNodes, activeNodeId, setActiveNode } = useTree();
 
+  console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
+
   // Compute nodes and edges from tree data
   const { nodes: flowNodes, edges: flowEdges } = useMemo(
     () => convertToFlowNodes(treeNodes, activeNodeId),
@@ -122,12 +124,15 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   );
 
   if (treeNodes.length === 0) {
+    console.log('[TreeView] Showing empty state');
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
         <p>Start exploring to build your research tree</p>
       </div>
     );
   }
+
+  console.log('[TreeView] Rendering ReactFlow with', flowNodes.length, 'nodes');
 
   return (
     <div className="w-full h-full">
