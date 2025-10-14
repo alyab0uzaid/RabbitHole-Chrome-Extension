@@ -259,14 +259,10 @@ export default defineBackground(() => {
             else if (!trackingState.isTracking && isWikipediaUrl(newUrl)) {
                 const articleTitle = getWikipediaArticleTitle(newUrl);
 
-                // Check if this is the initial article from a loaded tree
-                if (trackingState.isLoadedTree && trackingState.initialLoadedArticle === articleTitle) {
-                    console.log('[Background] Skipping tracking for initial loaded article:', articleTitle);
-                    // Don't start tracking yet - wait for actual navigation
-                } else {
-                    console.log('[Background] Opened Wikipedia directly - starting tracking');
-                    startTrackingSession(tabId, newUrl);
-                }
+                // Always start tracking when opening Wikipedia (even for loaded trees)
+                // This ensures the tree clears when the tab is closed
+                console.log('[Background] Opened Wikipedia - starting tracking');
+                startTrackingSession(tabId, newUrl);
             }
 
             // Update current URL for next check
