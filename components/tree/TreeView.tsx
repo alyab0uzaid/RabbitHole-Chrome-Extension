@@ -1,11 +1,12 @@
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Node,
   Edge,
   Controls,
   ConnectionLineType,
-  Panel
+  Panel,
+  useReactFlow
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTree } from '@/lib/tree-context';
@@ -136,6 +137,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const { nodes: treeNodes, activeNodeId, setActiveNode, currentSessionName, setCurrentSessionName } = useTree();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInputValue, setTitleInputValue] = useState('');
+  const reactFlowInstance = useRef<any>(null);
 
   console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
 
@@ -164,6 +166,45 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
     () => convertToFlowNodes(treeNodes, activeNodeId),
     [treeNodes, activeNodeId]
   );
+
+  // Center view on active node when it changes
+  useEffect(() => {
+    if (activeNodeId && reactFlowInstance.current?.fitView) {
+      const node = flowNodes.find(n => n.id === activeNodeId);
+      if (node) {
+        reactFlowInstance.current.fitView({
+          nodes: [{ id: activeNodeId }],
+          duration: 500,
+          padding: 0.2
+        });
+      }
+    }
+  }, [activeNodeId, flowNodes]);
+
+  // Fit view when nodes change (new node added)
+  useEffect(() => {
+    if (reactFlowInstance.current?.fitView && flowNodes.length > 0) {
+      reactFlowInstance.current.fitView({
+        duration: 300,
+        padding: 0.1
+      });
+    }
+  }, [flowNodes.length]);
+
+  // Handle resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (reactFlowInstance.current?.fitView) {
+        reactFlowInstance.current.fitView({
+          duration: 200,
+          padding: 0.1
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node<WikiNodeData>) => {
@@ -197,12 +238,13 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   return (
     <div className="w-full h-full">
       <ReactFlow
+        ref={reactFlowInstance}
         nodes={flowNodes}
         edges={flowEdges}
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         connectionLineType={ConnectionLineType.SmoothStep}
-        fitView
+        fitView={false}
         minZoom={0.1}
         maxZoom={2}
         defaultEdgeOptions={{
@@ -211,6 +253,18 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
             stroke: 'hsl(var(--muted-foreground) / 0.2)'
           },
           animated: false
+        }}
+        onInit={(instance) => {
+          reactFlowInstance.current = instance;
+          // Initial fit view
+          setTimeout(() => {
+            if (instance.fitView) {
+              instance.fitView({
+                duration: 300,
+                padding: 0.1
+              });
+            }
+          }, 100);
         }}
       >
         <Controls className="!border-border !bg-background/80 backdrop-blur-sm !shadow-sm [&_button]:!border-border [&_button]:!bg-background/80 [&_button]:hover:!bg-muted/50" />
