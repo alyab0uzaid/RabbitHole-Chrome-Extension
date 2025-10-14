@@ -79,6 +79,37 @@ export const WikipediaViewer: React.FC = () => {
                         { type: SourceContextType.MODAL_NAVIGATION }
                     );
                 }
+            } else if (message.messageType === 'trackNavigation') {
+                // Handle navigation tracking from main window (Tracking Mode)
+                const { articleTitle, articleUrl } = message;
+
+                console.log('[WikipediaViewer] Received tracking navigation:', articleTitle);
+
+                // Update state
+                setState(prev => ({
+                    ...prev,
+                    articleTitle,
+                    articleUrl,
+                    loading: false
+                }));
+
+                // Check if node already exists
+                const existingNode = treeNodesRef.current.find(node => node.title === articleTitle);
+
+                if (existingNode) {
+                    setActiveNode(existingNode.id);
+                } else {
+                    // Determine context type based on tree state
+                    const contextType = treeNodesRef.current.length === 0
+                        ? SourceContextType.SESSION_START
+                        : SourceContextType.MODAL_NAVIGATION; // Main window navigation acts like modal navigation
+
+                    addNode(
+                        articleTitle,
+                        articleUrl,
+                        { type: contextType }
+                    );
+                }
             }
         };
 

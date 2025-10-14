@@ -3,7 +3,23 @@ export enum MessageType {
     changeTheme = "changeTheme",
     changeLocale = "changeLocale",
     openSidePanel = "openSidePanel",
-    getSelectedText = "getSelectedText"
+    getSelectedText = "getSelectedText",
+    wikipediaNavigation = "wikipediaNavigation",
+    navigateToWikipedia = "navigateToWikipedia",
+    // Tracking mode messages
+    startTracking = "startTracking",
+    stopTracking = "stopTracking",
+    trackNavigation = "trackNavigation",
+    getMode = "getMode",
+    modeChanged = "modeChanged",
+    // Session management
+    saveSession = "saveSession",
+    saveSessionConfirmed = "saveSessionConfirmed",
+    clearSession = "clearSession",
+    loadSession = "loadSession",
+    setLoadedTreeInfo = "setLoadedTreeInfo",
+    getSessions = "getSessions",
+    deleteSession = "deleteSession"
 }
 
 export enum MessageFrom {
@@ -17,6 +33,18 @@ class ExtMessage {
     content?: string;
     from?: MessageFrom;
     selectedText?: string;
+    articleTitle?: string;
+    articleUrl?: string;
+    mode?: string;
+    sessionId?: string;
+    sessionName?: string;
+    tabId?: number;
+    promptUser?: boolean;
+    nodeCount?: number;
+    isLoadedTree?: boolean;
+    originalTreeId?: string;
+    originalTreeName?: string;
+    initialArticleTitle?: string;
 
     constructor(messageType: MessageType) {
         this.messageType = messageType;

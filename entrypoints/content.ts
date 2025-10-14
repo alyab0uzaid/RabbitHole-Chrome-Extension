@@ -52,6 +52,107 @@ export default defineContentScript({
         let ignoreNextMouseUp = false;
         let highlightedRanges: { range: Range; text: string; element: HTMLElement }[] = [];
         let currentHighlightedElement: HTMLElement | null = null;
+        let trackingIndicator: HTMLElement | null = null;
+        let isTracking = false;
+
+        // Listen for tracking mode messages
+        browser.runtime.onMessage.addListener((message: ExtMessage) => {
+            if (message.messageType === MessageType.startTracking) {
+                console.log('[Content] Starting tracking mode');
+                isTracking = true;
+                showTrackingIndicator();
+            } else if (message.messageType === MessageType.stopTracking) {
+                console.log('[Content] Stopping tracking mode');
+                isTracking = false;
+                hideTrackingIndicator();
+            }
+        });
+
+        // Create tracking indicator
+        function showTrackingIndicator() {
+            if (trackingIndicator) return; // Already visible
+
+            trackingIndicator = document.createElement('div');
+            trackingIndicator.className = 'rabbithole-tracking-indicator';
+            trackingIndicator.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 16px;">🕳️</span>
+                    <span style="font-size: 13px; font-weight: 500;">Tracking</span>
+                </div>
+            `;
+
+            // Styles
+            Object.assign(trackingIndicator.style, {
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                padding: '10px 16px',
+                background: 'rgba(0, 0, 0, 0.85)',
+                color: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                zIndex: '999998',
+                cursor: 'pointer',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.1)'
+            });
+
+            // Hover effect
+            trackingIndicator.addEventListener('mouseenter', () => {
+                if (trackingIndicator) {
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.95)';
+                    trackingIndicator.style.transform = 'scale(1.05)';
+                }
+            });
+
+            trackingIndicator.addEventListener('mouseleave', () => {
+                if (trackingIndicator) {
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.85)';
+                    trackingIndicator.style.transform = 'scale(1)';
+                }
+            });
+
+            // Click to open side panel
+            trackingIndicator.addEventListener('click', () => {
+                // @ts-ignore
+                browser.sidePanel?.open?.().catch((err: any) => {
+                    console.log('[Content] Could not open side panel:', err);
+                });
+            });
+
+            document.body.appendChild(trackingIndicator);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                if (trackingIndicator) {
+                    trackingIndicator.style.opacity = '0';
+                    trackingIndicator.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        if (trackingIndicator) {
+                            trackingIndicator.style.opacity = '1';
+                            trackingIndicator.style.transform = 'translateY(0)';
+                        }
+                    }, 10);
+                }
+            });
+        }
+
+        function hideTrackingIndicator() {
+            if (!trackingIndicator) return;
+
+            // Animate out
+            trackingIndicator.style.opacity = '0';
+            trackingIndicator.style.transform = 'translateY(20px)';
+
+            setTimeout(() => {
+                if (trackingIndicator) {
+                    trackingIndicator.remove();
+                    trackingIndicator = null;
+                }
+            }, 200);
+        }
 
         // Handle text selection
         document.addEventListener('mouseup', handleTextSelection);
@@ -390,23 +491,37 @@ export default defineContentScript({
                 }
             });
 
-            // Add click handler to entire card
-            previewCard.addEventListener('click', function(e) {
+            // Add click handler to entire card - navigates main window to Wikipedia
+            previewCard.addEventListener('click', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
 
-                console.log('Card clicked, opening sidebar...');
+                console.log('[Content] Card clicked, navigating to Wikipedia...');
 
-                const message: ExtMessage = {
-                    messageType: MessageType.openSidePanel,
-                    selectedText: text
-                };
+                try {
+                    // Get Wikipedia URL for the search term
+                    const searchUrl = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(text)}&limit=1&format=json&origin=*`;
+                    const searchResponse = await fetch(searchUrl);
+                    const searchData = await searchResponse.json();
 
-                browser.runtime.sendMessage(message).then(() => {
-                    console.log('Message sent successfully');
-                }).catch((error) => {
-                    console.error('Error sending message:', error);
-                });
+                    if (searchData[1] && searchData[1].length > 0) {
+                        const articleTitle = searchData[1][0];
+                        const wikipediaUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(articleTitle.replace(/ /g, '_'))}`;
+
+                        // Send message to background to navigate tab
+                        browser.runtime.sendMessage({
+                            messageType: MessageType.navigateToWikipedia,
+                            articleUrl: wikipediaUrl,
+                            articleTitle: articleTitle
+                        }).then(() => {
+                            console.log('[Content] Navigation message sent successfully');
+                        }).catch((error) => {
+                            console.error('[Content] Error sending navigation message:', error);
+                        });
+                    }
+                } catch (error) {
+                    console.error('[Content] Error fetching Wikipedia URL:', error);
+                }
 
                 if (previewCard) {
                     previewCard.remove();

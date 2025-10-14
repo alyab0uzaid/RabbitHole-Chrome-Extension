@@ -3,22 +3,23 @@ import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/compon
 import {IoMdCloseCircle} from "react-icons/io";
 import {IoIosSettings} from "react-icons/io";
 import {RiDashboardFill} from "react-icons/ri";
-import {BookOpen} from "lucide-react";
-import {Network} from "lucide-react";
+import {BookOpen, Network, FolderOpen} from "lucide-react";
+import {BrowsingMode} from "@/lib/mode-manager.ts";
 
 export enum SidebarType {
     'home' = 'home',
-    'wikipedia' = 'wikipedia',
     'tree' = 'tree',
+    'sessions' = 'sessions',
     'settings' = 'settings'
 }
 
 const Sidebar = (
-    {sideNav, closeContent}: {
+    {sideNav, closeContent, currentMode}: {
         sideNav: (sidebarType: SidebarType) => void,
-        closeContent?: () => void
+        closeContent?: () => void,
+        currentMode?: BrowsingMode
     }) => {
-    const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.home);
+    const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.tree);
     return (
         <aside
             className="absolute inset-y-0 right-0 z-10 flex w-14 flex-col border-r bg-background border-l-[1px]">
@@ -51,25 +52,6 @@ const Sidebar = (
                         <TooltipContent side="right">home</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-                
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.wikipedia ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
-                                href="#" onClick={() => {
-                                setSidebarType(SidebarType.wikipedia)
-                                sideNav(SidebarType.wikipedia)
-                            }}
-                            >
-                                <BookOpen
-                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
-                                <span className="sr-only">Wikipedia</span>
-                            </a>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">Wikipedia</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
 
                 <TooltipProvider>
                     <Tooltip>
@@ -87,6 +69,25 @@ const Sidebar = (
                             </a>
                         </TooltipTrigger>
                         <TooltipContent side="right">Research Tree</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <a
+                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.sessions ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
+                                href="#" onClick={() => {
+                                setSidebarType(SidebarType.sessions)
+                                sideNav(SidebarType.sessions)
+                            }}
+                            >
+                                <FolderOpen
+                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
+                                <span className="sr-only">Sessions</span>
+                            </a>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">Sessions</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </nav>

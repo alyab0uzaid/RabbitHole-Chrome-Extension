@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import {
   ReactFlow,
   Node,
@@ -103,9 +103,31 @@ interface TreeViewProps {
 }
 
 export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
-  const { nodes: treeNodes, activeNodeId, setActiveNode } = useTree();
+  const { nodes: treeNodes, activeNodeId, setActiveNode, currentSessionName, setCurrentSessionName } = useTree();
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleInputValue, setTitleInputValue] = useState('');
 
   console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
+
+  const handleTitleClick = useCallback(() => {
+    setTitleInputValue(currentSessionName);
+    setIsEditingTitle(true);
+  }, [currentSessionName]);
+
+  const handleTitleBlur = useCallback(() => {
+    if (titleInputValue.trim()) {
+      setCurrentSessionName(titleInputValue.trim());
+    }
+    setIsEditingTitle(false);
+  }, [titleInputValue, setCurrentSessionName]);
+
+  const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      setIsEditingTitle(false);
+    }
+  }, []);
 
   // Compute nodes and edges from tree data
   const { nodes: flowNodes, edges: flowEdges } = useMemo(
@@ -126,8 +148,16 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   if (treeNodes.length === 0) {
     console.log('[TreeView] Showing empty state');
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>Start exploring to build your research tree</p>
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 p-8 text-center">
+        <div className="text-6xl">🕳️</div>
+        <div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">No Active Research Session</h3>
+          <p className="text-sm">
+            Highlight text on any page and click the preview card to start exploring Wikipedia.
+            <br />
+            Your journey will be tracked automatically.
+          </p>
+        </div>
       </div>
     );
   }
@@ -148,9 +178,30 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
       >
         <Background />
         <Controls />
-        <Panel position="top-left" className="bg-background/80 backdrop-blur-sm p-2 rounded-md border">
-          <div className="text-sm text-muted-foreground">
-            {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
+        <Panel position="top-left" className="bg-background/80 backdrop-blur-sm p-3 rounded-md border">
+          <div className="flex flex-col gap-2 min-w-[250px]">
+            {isEditingTitle ? (
+              <input
+                type="text"
+                value={titleInputValue}
+                onChange={(e) => setTitleInputValue(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                autoFocus
+                className="text-lg font-semibold bg-transparent border-none outline-none focus:outline-none px-0 w-full"
+              />
+            ) : (
+              <h2
+                onClick={handleTitleClick}
+                className="text-lg font-semibold cursor-pointer hover:bg-muted/50 px-1 -ml-1 rounded transition-colors"
+                title="Click to edit"
+              >
+                {currentSessionName || 'Untitled Session'}
+              </h2>
+            )}
+            <div className="text-xs text-muted-foreground">
+              {treeNodes.length} {treeNodes.length === 1 ? 'article' : 'articles'}
+            </div>
           </div>
         </Panel>
       </ReactFlow>
