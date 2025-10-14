@@ -4,7 +4,6 @@ import {
   Node,
   Edge,
   Controls,
-  Background,
   ConnectionLineType,
   Panel
 } from '@xyflow/react';
@@ -18,64 +17,89 @@ const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
 };
 
-// Convert tree data to React Flow format
+// Convert tree data to React Flow format with proper branching layout
 function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | null): { nodes: Node<WikiNodeData>[]; edges: Edge[] } {
   const nodes: Node<WikiNodeData>[] = [];
   const edges: Edge[] = [];
 
-  // Calculate positions using a simple tree layout
-  const nodesByLevel: { [level: number]: WikiTreeNode[] } = {};
-  const nodeLevels: { [id: string]: number } = {};
+  if (treeNodes.length === 0) return { nodes, edges };
 
-  // Calculate levels
-  const calculateLevel = (node: WikiTreeNode): number => {
-    if (nodeLevels[node.id] !== undefined) {
-      return nodeLevels[node.id];
-    }
+  const nodePositions: { [id: string]: { x: number; y: number } } = {};
+  const horizontalSpacing = 180;
+  const verticalSpacing = 120;
 
-    if (node.parentId === null) {
-      nodeLevels[node.id] = 0;
-      return 0;
-    }
-
-    const parent = treeNodes.find(n => n.id === node.parentId);
-    if (!parent) {
-      nodeLevels[node.id] = 0;
-      return 0;
-    }
-
-    const level = calculateLevel(parent) + 1;
-    nodeLevels[node.id] = level;
-    return level;
-  };
-
-  // Group nodes by level
+  // Build parent-children map
+  const childrenMap: { [id: string]: WikiTreeNode[] } = {};
   treeNodes.forEach(node => {
-    const level = calculateLevel(node);
-    if (!nodesByLevel[level]) {
-      nodesByLevel[level] = [];
+    if (node.parentId) {
+      if (!childrenMap[node.parentId]) {
+        childrenMap[node.parentId] = [];
+      }
+      childrenMap[node.parentId].push(node);
     }
-    nodesByLevel[level].push(node);
   });
 
-  // Position nodes
-  const horizontalSpacing = 250;
-  const verticalSpacing = 100;
+  // Find root node
+  const rootNode = treeNodes.find(node => node.parentId === null);
+  if (!rootNode) return { nodes, edges };
 
+  // Position root node at center (anchored)
+  nodePositions[rootNode.id] = { x: 0, y: 0 };
+
+  // Calculate total width needed for the entire tree
+  let globalX = 0;
+  const calculateTreeWidth = (node: WikiTreeNode): number => {
+    const children = childrenMap[node.id] || [];
+    if (children.length === 0) return 1;
+    return children.reduce((sum, child) => sum + calculateTreeWidth(child), 0);
+  };
+
+  const totalTreeWidth = calculateTreeWidth(rootNode);
+  const startX = -(totalTreeWidth - 1) * horizontalSpacing / 2;
+  
+  // Position nodes recursively starting from root
+  let currentX = startX;
+  
+  const positionSubtree = (node: WikiTreeNode, depth: number): { minX: number; maxX: number } => {
+    const children = childrenMap[node.id] || [];
+    
+    if (children.length === 0) {
+      // Leaf node - position at current X
+      const x = currentX;
+      currentX += horizontalSpacing;
+      nodePositions[node.id] = { x, y: depth * verticalSpacing };
+      return { minX: x, maxX: x };
+    }
+
+    // Position all children first to get their range
+    const childRanges = children.map(child => {
+      const range = positionSubtree(child, depth + 1);
+      return range;
+    });
+
+    // Calculate the range of all children
+    const minChildX = Math.min(...childRanges.map(r => r.minX));
+    const maxChildX = Math.max(...childRanges.map(r => r.maxX));
+    
+    // For non-root nodes, position parent at the center of its children
+    if (node.id !== rootNode.id) {
+      const x = (minChildX + maxChildX) / 2;
+      nodePositions[node.id] = { x, y: depth * verticalSpacing };
+    }
+    
+    return { minX: minChildX, maxX: maxChildX };
+  };
+
+  // Start positioning from root (root is already positioned at center)
+  positionSubtree(rootNode, 0);
+
+  // Create nodes with calculated positions
   treeNodes.forEach(node => {
-    const level = nodeLevels[node.id];
-    const nodesAtLevel = nodesByLevel[level];
-    const indexAtLevel = nodesAtLevel.indexOf(node);
-    const totalAtLevel = nodesAtLevel.length;
-
-    // Center nodes at each level
-    const x = (indexAtLevel - (totalAtLevel - 1) / 2) * horizontalSpacing;
-    const y = level * verticalSpacing;
-
+    const pos = nodePositions[node.id];
     nodes.push({
       id: node.id,
       type: 'wikiNode',
-      position: { x, y },
+      position: pos,
       data: {
         title: node.title,
         url: node.url,
@@ -90,7 +114,13 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
         source: node.parentId,
         target: node.id,
         type: ConnectionLineType.SmoothStep,
-        animated: node.id === activeNodeId
+        animated: node.id === activeNodeId,
+        style: {
+          strokeWidth: 2,
+          stroke: node.id === activeNodeId 
+            ? 'hsl(var(--primary) / 0.6)' 
+            : 'hsl(var(--muted-foreground) / 0.2)'
+        }
       });
     }
   });
@@ -175,9 +205,15 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
         fitView
         minZoom={0.1}
         maxZoom={2}
+        defaultEdgeOptions={{
+          style: { 
+            strokeWidth: 2,
+            stroke: 'hsl(var(--muted-foreground) / 0.2)'
+          },
+          animated: false
+        }}
       >
-        <Background />
-        <Controls />
+        <Controls className="!border-border !bg-background/80 backdrop-blur-sm !shadow-sm [&_button]:!border-border [&_button]:!bg-background/80 [&_button]:hover:!bg-muted/50" />
         <Panel position="top-left" className="bg-background/80 backdrop-blur-sm p-3 rounded-md border">
           <div className="flex flex-col gap-2 min-w-[250px]">
             {isEditingTitle ? (

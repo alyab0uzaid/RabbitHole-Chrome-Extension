@@ -10,19 +10,29 @@ export interface WikiNodeData extends Record<string, unknown> {
 function WikiNode({ data }: NodeProps<Node<WikiNodeData>>) {
   return (
     <div
-      className={`px-4 py-2 rounded-lg border-2 bg-background shadow-md min-w-[150px] max-w-[200px] transition-all ${
+      className={`group px-5 py-3 rounded-xl border bg-card shadow-sm min-w-[160px] max-w-[220px] transition-all duration-200 ${
         data.isActive
-          ? 'border-primary ring-2 ring-primary/20'
-          : 'border-border hover:border-primary/50'
+          ? 'border-primary/60 shadow-md shadow-primary/10 scale-105'
+          : 'border-border/40 hover:border-primary/40 hover:shadow-md'
       }`}
     >
-      <Handle type="target" position={Position.Top} className="w-2 h-2" />
+      <Handle 
+        type="target" 
+        position={Position.Top} 
+        className="!w-2 !h-2 !border-0 !bg-transparent !opacity-0 group-hover:!opacity-100 group-hover:!bg-primary/50 transition-opacity" 
+      />
 
-      <div className="text-sm font-medium text-foreground truncate" title={data.title}>
+      <div className={`text-sm font-medium truncate transition-colors ${
+        data.isActive ? 'text-primary' : 'text-foreground'
+      }`} title={data.title}>
         {data.title}
       </div>
 
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2" />
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        className="!w-2 !h-2 !border-0 !bg-transparent !opacity-0 group-hover:!opacity-100 group-hover:!bg-primary/50 transition-opacity" 
+      />
     </div>
   );
 }
