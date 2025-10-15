@@ -12,7 +12,8 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
   const svgWidth = 120;
   const svgHeight = 80;
   const padding = 8;
-  const nodeRadius = 2.5;
+  const nodeWidth = 12;  // Width of rectangle
+  const nodeHeight = 8;  // Height of rectangle
 
   // Use the same positioning algorithm as the main tree
   const calculatePositions = () => {
@@ -132,20 +133,22 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
           return null;
         })}
         
-        {/* Render nodes */}
+        {/* Render nodes as rectangles */}
         {nodes.map((node) => {
           const pos = nodePositions[node.id];
           if (!pos) return null;
           
           return (
-            <circle
+            <rect
               key={node.id}
-              cx={pos.x + offsetX}
-              cy={pos.y + offsetY}
-              r={nodeRadius}
-              fill={node.parentId === null ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.7)"}
-              stroke="hsl(var(--background))"
-              strokeWidth="1"
+              x={pos.x + offsetX - nodeWidth / 2}
+              y={pos.y + offsetY - nodeHeight / 2}
+              width={nodeWidth}
+              height={nodeHeight}
+              rx="2"
+              fill="hsl(var(--card) / 0.3)"
+              stroke={node.parentId === null ? "hsl(var(--primary))" : "hsl(var(--border))"}
+              strokeWidth="1.5"
             />
           );
         })}

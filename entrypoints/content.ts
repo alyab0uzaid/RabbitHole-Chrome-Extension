@@ -45,7 +45,7 @@ async function fetchWikipediaPreview(searchText: string): Promise<WikipediaPrevi
 }
 
 export default defineContentScript({
-    matches: ['*://*/*'],
+    matches: ['*://*.wikipedia.org/*'],
     runAt: 'document_end',
     main() {
         let previewCard: HTMLElement | null = null;
@@ -54,73 +54,262 @@ export default defineContentScript({
         let currentHighlightedElement: HTMLElement | null = null;
         let trackingIndicator: HTMLElement | null = null;
         let isTracking = false;
+        let currentTreeNodes: any[] = [];
+        let currentActiveNodeId: string | null = null;
 
-        // Listen for tracking mode messages
-        browser.runtime.onMessage.addListener((message: ExtMessage) => {
-            if (message.messageType === MessageType.startTracking) {
-                console.log('[Content] Starting tracking mode');
-                isTracking = true;
-                showTrackingIndicator();
-            } else if (message.messageType === MessageType.stopTracking) {
-                console.log('[Content] Stopping tracking mode');
-                isTracking = false;
-                hideTrackingIndicator();
+        // Function to update minimap content
+        function updateMinimapContent() {
+            if (!trackingIndicator) return;
+            
+            if (currentTreeNodes.length === 0) {
+                // Show empty state
+                trackingIndicator.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.7); font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center;">
+                        Click to explore
+                    </div>
+                `;
+                return;
             }
-        });
 
-        // Create tracking indicator
+            // Render minimap SVG with active node
+            const svg = renderMinimapSVG(currentTreeNodes, currentActiveNodeId || undefined);
+            trackingIndicator.innerHTML = svg;
+        }
+
+        // Function to render the minimap as SVG (using exact same algorithm as main tree)
+        function renderMinimapSVG(nodes: any[], activeNodeId?: string): string {
+            const svgWidth = 184;  // 200 - 16 (padding)
+            const svgHeight = 134; // 150 - 16 (padding)
+            const nodeWidth = 14;
+            const nodeHeight = 10;
+            const horizontalSpacing = 22;  // Scaled down from main tree
+            const verticalSpacing = 20;   // Scaled down from main tree
+
+            // Build parent-children map (same as main tree)
+            const childrenMap: { [id: string]: any[] } = {};
+            nodes.forEach(node => {
+                if (node.parentId) {
+                    if (!childrenMap[node.parentId]) {
+                        childrenMap[node.parentId] = [];
+                    }
+                    childrenMap[node.parentId].push(node);
+                }
+            });
+
+            const rootNode = nodes.find(n => n.parentId === null);
+            if (!rootNode) return '<svg></svg>';
+
+            // Position root node at center (anchored) - same as main tree
+            const nodePositions: { [id: string]: { x: number; y: number } } = {};
+            nodePositions[rootNode.id] = { x: 0, y: 0 };
+
+            // Calculate total width needed for the entire tree - same as main tree
+            const calculateTreeWidth = (node: any): number => {
+                const children = childrenMap[node.id] || [];
+                if (children.length === 0) return 1;
+                return children.reduce((sum: number, child: any) => sum + calculateTreeWidth(child), 0);
+            };
+
+            const totalTreeWidth = calculateTreeWidth(rootNode);
+            const startX = -(totalTreeWidth - 1) * horizontalSpacing / 2;
+            
+            // Position nodes recursively starting from root - same as main tree
+            let currentX = startX;
+            
+            const positionSubtree = (node: any, depth: number): { minX: number; maxX: number } => {
+                const children = childrenMap[node.id] || [];
+                
+                if (children.length === 0) {
+                    // Leaf node - position at current X
+                    const x = currentX;
+                    currentX += horizontalSpacing;
+                    nodePositions[node.id] = { x, y: depth * verticalSpacing };
+                    return { minX: x, maxX: x };
+                }
+
+                // Position all children first to get their range
+                const childRanges = children.map((child: any) => {
+                    const range = positionSubtree(child, depth + 1);
+                    return range;
+                });
+
+                // Calculate the range of all children
+                const minChildX = Math.min(...childRanges.map(r => r.minX));
+                const maxChildX = Math.max(...childRanges.map(r => r.maxX));
+                
+                // For non-root nodes, position parent at the center of its children
+                if (node.id !== rootNode.id) {
+                    const x = (minChildX + maxChildX) / 2;
+                    nodePositions[node.id] = { x, y: depth * verticalSpacing };
+                }
+                
+                return { minX: minChildX, maxX: maxChildX };
+            };
+
+            // Start positioning from root (root is already positioned at center)
+            positionSubtree(rootNode, 0);
+
+            // Center the tree in the SVG viewport
+            const allPositions = Object.values(nodePositions);
+            const minX = Math.min(...allPositions.map(p => p.x));
+            const maxX = Math.max(...allPositions.map(p => p.x));
+            const minY = Math.min(...allPositions.map(p => p.y));
+            const maxY = Math.max(...allPositions.map(p => p.y));
+            
+            const treeWidth = maxX - minX;
+            const treeHeight = maxY - minY;
+            
+            let offsetX, offsetY;
+            
+            if (treeWidth <= svgWidth && treeHeight <= svgHeight) {
+                // Tree fits completely - center it
+                offsetX = (svgWidth - treeWidth) / 2 - minX;
+                offsetY = (svgHeight - treeHeight) / 2 - minY;
+            } else if (activeNodeId && nodePositions[activeNodeId]) {
+                // Tree is larger than viewport - show as much as possible while keeping active node visible
+                const activePos = nodePositions[activeNodeId];
+                const padding = 10; // Padding from edges
+                
+                // Start by trying to center the whole tree
+                offsetX = (svgWidth - treeWidth) / 2 - minX;
+                offsetY = (svgHeight - treeHeight) / 2 - minY;
+                
+                // Check if active node is visible with this offset
+                const activeScreenX = activePos.x + offsetX;
+                const activeScreenY = activePos.y + offsetY;
+                
+                // Adjust offset to keep active node visible
+                if (activeScreenX < padding) {
+                    offsetX = padding - activePos.x;
+                } else if (activeScreenX > svgWidth - padding) {
+                    offsetX = svgWidth - padding - activePos.x;
+                }
+                
+                if (activeScreenY < padding) {
+                    offsetY = padding - activePos.y;
+                } else if (activeScreenY > svgHeight - padding) {
+                    offsetY = svgHeight - padding - activePos.y;
+                }
+            } else {
+                // No active node - just center the tree
+                offsetX = (svgWidth - treeWidth) / 2 - minX;
+                offsetY = (svgHeight - treeHeight) / 2 - minY;
+            }
+
+            // Generate SVG
+            let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="display: block;">`;
+            
+            // Draw edges first (same as main tree - SmoothStep style)
+            nodes.forEach(node => {
+                if (node.parentId && nodePositions[node.parentId] && nodePositions[node.id]) {
+                    const parent = nodePositions[node.parentId];
+                    const child = nodePositions[node.id];
+                    
+                    const parentX = parent.x + offsetX;
+                    const parentY = parent.y + offsetY;
+                    const childX = child.x + offsetX;
+                    const childY = child.y + offsetY;
+                    
+                    // Create smooth step path (simplified version of React Flow's SmoothStep)
+                    const midY = parentY + (childY - parentY) / 2;
+                    const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
+                    
+                    const isActive = node.id === activeNodeId;
+                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'rgba(100,200,255,0.6)' : 'rgba(255,255,255,0.2)'}" stroke-width="${isActive ? '2' : '1.5'}"/>`;
+                }
+            });
+
+            // Draw nodes (completely solid fill, current node blue) - drawn AFTER edges so they're on top
+            nodes.forEach(node => {
+                const pos = nodePositions[node.id];
+                if (pos) {
+                    const isActive = node.id === activeNodeId;
+                    const isRoot = node.parentId === null;
+                    
+                    let fillColor;
+                    if (isActive) {
+                        fillColor = 'rgb(100,200,255)'; // Solid blue for active node
+                    } else if (isRoot) {
+                        fillColor = 'rgb(255,255,255)'; // Solid white for root
+                    } else {
+                        fillColor = 'rgb(200,200,200)'; // Solid grey for others
+                    }
+                    
+                    svgContent += `<rect x="${pos.x + offsetX - nodeWidth/2}" y="${pos.y + offsetY - nodeHeight/2}" width="${nodeWidth}" height="${nodeHeight}" rx="2" fill="${fillColor}" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>`;
+                }
+            });
+
+            svgContent += '</svg>';
+            return svgContent;
+        }
+
+        // Create RabbitHole minimap
         function showTrackingIndicator() {
             if (trackingIndicator) return; // Already visible
 
             trackingIndicator = document.createElement('div');
-            trackingIndicator.className = 'rabbithole-tracking-indicator';
-            trackingIndicator.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 16px;">🕳️</span>
-                    <span style="font-size: 13px; font-weight: 500;">Tracking</span>
-                </div>
-            `;
+            trackingIndicator.className = 'rabbithole-minimap';
 
-            // Styles
+            // Styles for minimap container
             Object.assign(trackingIndicator.style, {
                 position: 'fixed',
                 bottom: '20px',
                 right: '20px',
-                padding: '10px 16px',
-                background: 'rgba(0, 0, 0, 0.85)',
-                color: 'white',
+                width: '200px',
+                height: '150px',
+                background: 'rgba(0, 0, 0, 0.5)', // 50% black translucent
                 borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                border: '2px solid rgba(255, 255, 255, 0.7)', // White/grey solid border
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
                 zIndex: '999998',
                 cursor: 'pointer',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.3s ease',
                 backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255,255,255,0.1)'
+                overflow: 'hidden',
+                padding: '8px'
             });
 
             // Hover effect
             trackingIndicator.addEventListener('mouseenter', () => {
                 if (trackingIndicator) {
-                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.95)';
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.65)';
                     trackingIndicator.style.transform = 'scale(1.05)';
+                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.9)';
                 }
             });
 
             trackingIndicator.addEventListener('mouseleave', () => {
                 if (trackingIndicator) {
-                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.85)';
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.5)';
                     trackingIndicator.style.transform = 'scale(1)';
+                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.7)';
                 }
             });
 
-            // Click to open side panel
+            // Click to open side panel (no transition - keep minimap visible)
             trackingIndicator.addEventListener('click', () => {
-                // @ts-ignore
-                browser.sidePanel?.open?.().catch((err: any) => {
-                    console.log('[Content] Could not open side panel:', err);
+                console.log('[Content] Minimap clicked, opening sidepanel');
+                
+                // Brief click feedback animation
+                if (trackingIndicator) {
+                    trackingIndicator.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        if (trackingIndicator) {
+                            trackingIndicator.style.transform = 'scale(1)';
+                        }
+                    }, 100);
+                }
+                
+                // Open sidepanel immediately
+                browser.runtime.sendMessage({
+                    messageType: MessageType.openSidePanel
+                }).catch((err: any) => {
+                    console.log('[Content] Could not send open sidepanel message:', err);
                 });
             });
+
+            // Initial render
+            updateMinimapContent();
 
             document.body.appendChild(trackingIndicator);
 
@@ -153,6 +342,31 @@ export default defineContentScript({
                 }
             }, 200);
         }
+
+        // Initialize minimap on page load
+        showTrackingIndicator();
+
+        // Listen for tracking mode messages
+        browser.runtime.onMessage.addListener((message: ExtMessage) => {
+            if (message.messageType === MessageType.startTracking) {
+                console.log('[Content] Starting tracking mode');
+                isTracking = true;
+                showTrackingIndicator();
+            } else if (message.messageType === MessageType.stopTracking) {
+                console.log('[Content] Stopping tracking mode');
+                isTracking = false;
+                // Keep button visible - don't hide it
+            }
+        });
+
+        // Listen for tree updates from background
+        browser.runtime.onMessage.addListener((message: any) => {
+            if (message.messageType === 'updateTreeMinimap' && message.treeNodes) {
+                currentTreeNodes = message.treeNodes;
+                currentActiveNodeId = message.activeNodeId || null;
+                updateMinimapContent();
+            }
+        });
 
         // Handle text selection
         document.addEventListener('mouseup', handleTextSelection);

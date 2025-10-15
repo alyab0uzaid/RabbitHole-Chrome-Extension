@@ -102,6 +102,15 @@ export default defineBackground(() => {
                 sessionId: trackingState.sessionId,
                 tabId: trackingState.tabId
             }).catch(err => console.log('[Background] Could not notify sidepanel:', err));
+
+            // Update minimap in content script
+            if (trackingState.tabId) {
+                browser.tabs.sendMessage(trackingState.tabId, {
+                    messageType: 'updateTreeMinimap',
+                    treeNodes: trackingState.treeNodes,
+                    activeNodeId: trackingState.activeNodeId
+                }).catch(err => console.log('[Background] Could not notify content script:', err));
+            }
         });
     }
 
@@ -352,6 +361,13 @@ export default defineBackground(() => {
                           ? `${trackingState.treeNodes[0].title} - ${new Date(trackingState.treeNodes[0].timestamp).toLocaleDateString()}`
                           : `Rabbit Hole - ${new Date().toLocaleDateString()}`
                     }).catch(err => console.log('[Background] Could not switch sidepanel tree:', err));
+
+                    // Update minimap in content script
+                    browser.tabs.sendMessage(activeInfo.tabId, {
+                        messageType: 'updateTreeMinimap',
+                        treeNodes: trackingState.treeNodes,
+                        activeNodeId: trackingState.activeNodeId
+                    }).catch(err => console.log('[Background] Could not update minimap:', err));
                     
                 } else {
                     // Start new tracking session for this tab
@@ -448,18 +464,23 @@ export default defineBackground(() => {
             lastSelectedText = message.selectedText || '';
             console.log("Stored selected text:", lastSelectedText);
             if (sender.tab?.windowId) {
+                console.log('[Background] Opening sidepanel for window:', sender.tab.windowId);
                 // @ts-ignore
-                browser.sidePanel.open({ windowId: sender.tab.windowId });
-                
-                // Send message to sidepanel to switch to Wikipedia view
-                setTimeout(() => {
-                    browser.runtime.sendMessage({
-                        messageType: MessageType.openSidePanel,
-                        selectedText: lastSelectedText
-                    }).catch((error) => {
-                        console.log("Could not send message to sidepanel:", error);
-                    });
-                }, 100); // Small delay to ensure sidepanel is loaded
+                browser.sidePanel.open({ windowId: sender.tab.windowId }).then(() => {
+                    console.log('[Background] Sidepanel opened successfully');
+                    
+                    // Send message to sidepanel to switch to Wikipedia view
+                    setTimeout(() => {
+                        browser.runtime.sendMessage({
+                            messageType: MessageType.openSidePanel,
+                            selectedText: lastSelectedText
+                        }).catch((error) => {
+                            console.log("Could not send message to sidepanel:", error);
+                        });
+                    }, 100); // Small delay to ensure sidepanel is loaded
+                }).catch((error: any) => {
+                    console.error('[Background] Failed to open sidepanel:', error);
+                });
             }
             return true;
         } else if (message.messageType === MessageType.getSelectedText) {

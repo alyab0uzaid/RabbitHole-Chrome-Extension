@@ -6,6 +6,9 @@ export default defineConfig({
     manifest: {
         permissions: ["activeTab", "scripting", "sidePanel", "storage", "tabs", "webNavigation"],
         action: {},
+        side_panel: {
+            default_path: "sidepanel.html"
+        },
         name: 'RabbitHole',
         description: 'Wikipedia preview and research tool',
         default_locale: "en"
