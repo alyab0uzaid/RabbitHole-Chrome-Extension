@@ -103,7 +103,7 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
 
             // Set default session name if this is the first node
             if (prevNodes.length === 0 && !currentSessionName) {
-              setCurrentSessionName(`Session ${new Date().toLocaleString()}`);
+              setCurrentSessionName(`${articleTitle} - ${new Date().toLocaleDateString()}`);
             }
 
             return [...prevNodes, newNode];
@@ -132,8 +132,9 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
           setActiveNodeId(restoredActiveNodeId);
           setCurrentSessionId(restoredSessionId);
           // Update session name if we have a default one
-          if (!currentSessionName) {
-            setCurrentSessionName(`Session ${new Date().toLocaleString()}`);
+          if (!currentSessionName && restoredNodes.length > 0) {
+            const firstNode = restoredNodes[0];
+            setCurrentSessionName(`${firstNode.title} - ${new Date().toLocaleDateString()}`);
           }
         }
       } else if (message.messageType === 'switchToTabTree') {

@@ -165,7 +165,9 @@ export default defineBackground(() => {
             nodes: trackingState.treeNodes,
             activeNodeId: trackingState.activeNodeId,
             sessionId: trackingState.sessionId,
-            sessionName: `Session ${new Date().toLocaleString()}`
+            sessionName: trackingState.treeNodes.length > 0 
+              ? `${trackingState.treeNodes[0].title} - ${new Date().toLocaleDateString()}`
+              : `Rabbit Hole - ${new Date().toLocaleDateString()}`
         }).catch(err => console.log('[Background] Could not switch sidepanel tree:', err));
     }
 
@@ -221,7 +223,9 @@ export default defineBackground(() => {
 
         const savedTree = {
             id: trackingState.sessionId || `tree-${Date.now()}`,
-            name: `Session ${new Date().toLocaleString()}`,
+            name: trackingState.treeNodes.length > 0 
+              ? `${trackingState.treeNodes[0].title} - ${new Date().toLocaleDateString()}`
+              : `Rabbit Hole - ${new Date().toLocaleDateString()}`,
             nodes: [...trackingState.treeNodes],
             createdAt: Date.now()
         };
@@ -344,7 +348,9 @@ export default defineBackground(() => {
                         nodes: trackingState.treeNodes,
                         activeNodeId: trackingState.activeNodeId,
                         sessionId: trackingState.sessionId,
-                        sessionName: `Session ${new Date(trackingState.treeNodes[0]?.timestamp || Date.now()).toLocaleString()}`
+                        sessionName: trackingState.treeNodes.length > 0 
+                          ? `${trackingState.treeNodes[0].title} - ${new Date(trackingState.treeNodes[0].timestamp).toLocaleDateString()}`
+                          : `Rabbit Hole - ${new Date().toLocaleDateString()}`
                     }).catch(err => console.log('[Background] Could not switch sidepanel tree:', err));
                     
                 } else {

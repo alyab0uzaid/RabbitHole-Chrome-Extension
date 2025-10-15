@@ -162,11 +162,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const { savedTrees, loadTree, deleteSavedTree } = useTree();
 
   const handleLoadSession = (treeId: string) => {
-    console.log('[Sessions] Loading tree:', treeId);
+    console.log('[Rabbit Holes] Loading tree:', treeId);
 
     // Load the tree and switch to tree view
     loadTree(treeId, () => {
-      console.log('[Sessions] Switching to tree view');
+      console.log('[Rabbit Holes] Switching to tree view');
       if (onSwitchToTree) {
         onSwitchToTree();
       }
@@ -175,7 +175,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
 
   const handleDeleteSession = (treeId: string) => {
     const confirm = window.confirm(
-      'Are you sure you want to delete this session? This cannot be undone.'
+      'Are you sure you want to delete this rabbit hole? This cannot be undone.'
     );
     if (!confirm) return;
 
@@ -184,22 +184,25 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
 
   return (
     <div className="h-full flex flex-col">
+      <div className="p-6 pb-4">
+        <h1 className="text-2xl font-bold text-foreground">Rabbit Holes</h1>
+      </div>
       {/* Saved Sessions List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-6">
         {savedTrees.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 p-8 text-center">
             <div className="text-6xl">📚</div>
             <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No Saved Sessions</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Rabbit Holes Yet</h3>
               <p className="text-sm">
-                Your research sessions will appear here once you save them.
+                Your explorations will appear here once you start diving down Wikipedia rabbit holes.
                 <br />
                 Build a tree and it will be automatically saved!
               </p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 p-1">
+          <div className="grid grid-cols-1 gap-4 p-1 pb-6">
             {savedTrees.map((tree) => (
               <Card key={tree.id} className="overflow-hidden hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
                 {/* Tree Minimap */}
@@ -229,7 +232,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                       className="flex-1 gap-1"
                     >
                       <Play className="h-3 w-3" />
-                      Load
+                      Dive In
                     </Button>
                     <Button
                       onClick={() => handleDeleteSession(tree.id)}

@@ -8,7 +8,6 @@ import {BrowsingMode} from "@/lib/mode-manager.ts";
 
 export enum SidebarType {
     'home' = 'home',
-    'tree' = 'tree',
     'sessions' = 'sessions',
     'settings' = 'settings'
 }
@@ -19,7 +18,7 @@ const Sidebar = (
         closeContent?: () => void,
         currentMode?: BrowsingMode
     }) => {
-    const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.tree);
+    const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.home);
     return (
         <aside
             className="absolute inset-y-0 right-0 z-10 flex w-14 flex-col border-r bg-background border-l-[1px]">
@@ -53,24 +52,6 @@ const Sidebar = (
                     </Tooltip>
                 </TooltipProvider>
 
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.tree ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
-                                href="#" onClick={() => {
-                                setSidebarType(SidebarType.tree)
-                                sideNav(SidebarType.tree)
-                            }}
-                            >
-                                <Network
-                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
-                                <span className="sr-only">Tree</span>
-                            </a>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">Research Tree</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
 
                 <TooltipProvider>
                     <Tooltip>
@@ -84,10 +65,10 @@ const Sidebar = (
                             >
                                 <FolderOpen
                                     className={`h-4 w-4 transition-all group-hover:scale-110`}/>
-                                <span className="sr-only">Sessions</span>
+                                <span className="sr-only">Rabbit Holes</span>
                             </a>
                         </TooltipTrigger>
-                        <TooltipContent side="right">Sessions</TooltipContent>
+                        <TooltipContent side="right">Rabbit Holes</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </nav>
