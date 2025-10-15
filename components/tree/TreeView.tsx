@@ -236,65 +236,70 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   console.log('[TreeView] Rendering ReactFlow with', flowNodes.length, 'nodes');
 
   return (
-    <div className="w-full h-full">
-      <ReactFlow
-        ref={reactFlowInstance}
-        nodes={flowNodes}
-        edges={flowEdges}
-        onNodeClick={handleNodeClick}
-        nodeTypes={nodeTypes}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        fitView={false}
-        minZoom={0.1}
-        maxZoom={2}
-        defaultEdgeOptions={{
-          style: { 
-            strokeWidth: 2,
-            stroke: 'hsl(var(--muted-foreground) / 0.2)'
-          },
-          animated: false
-        }}
-        onInit={(instance) => {
-          reactFlowInstance.current = instance;
-          // Initial fit view
-          setTimeout(() => {
-            if (instance.fitView) {
-              instance.fitView({
-                duration: 300,
-                padding: 0.1
-              });
-            }
-          }, 100);
-        }}
-      >
-        <Controls className="!border-border !bg-background/80 backdrop-blur-sm !shadow-sm [&_button]:!border-border [&_button]:!bg-background/80 [&_button]:hover:!bg-muted/50" />
-        <Panel position="top-left" className="bg-background/80 backdrop-blur-sm p-3 rounded-md border">
-          <div className="flex flex-col gap-2 min-w-[250px]">
-            {isEditingTitle ? (
-              <input
-                type="text"
-                value={titleInputValue}
-                onChange={(e) => setTitleInputValue(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                autoFocus
-                className="text-lg font-semibold bg-transparent border-none outline-none focus:outline-none px-0 w-full"
-              />
-            ) : (
-              <h2
-                onClick={handleTitleClick}
-                className="text-lg font-semibold cursor-pointer hover:bg-muted/50 px-1 -ml-1 rounded transition-colors"
-                title="Click to edit"
-              >
-                {currentSessionName || 'Untitled Session'}
-              </h2>
-            )}
-            <div className="text-xs text-muted-foreground">
-              {treeNodes.length} {treeNodes.length === 1 ? 'article' : 'articles'}
-            </div>
+    <div className="w-full h-full flex flex-col">
+      {/* Title Panel at the top */}
+      <div className="bg-background/95 backdrop-blur-sm p-4 border-b">
+        <div className="flex flex-col gap-2">
+          {isEditingTitle ? (
+            <input
+              type="text"
+              value={titleInputValue}
+              onChange={(e) => setTitleInputValue(e.target.value)}
+              onBlur={handleTitleBlur}
+              onKeyDown={handleTitleKeyDown}
+              autoFocus
+              className="text-xl font-bold bg-transparent border-none outline-none focus:outline-none px-0 w-full"
+            />
+          ) : (
+            <h1
+              onClick={handleTitleClick}
+              className="text-xl font-bold cursor-pointer hover:bg-muted/50 px-2 -ml-2 rounded transition-colors"
+              title="Click to edit"
+            >
+              {currentSessionName || 'Untitled Session'}
+            </h1>
+          )}
+          <div className="text-sm text-muted-foreground">
+            {treeNodes.length} {treeNodes.length === 1 ? 'article' : 'articles'}
           </div>
-        </Panel>
-      </ReactFlow>
+        </div>
+      </div>
+      
+      {/* Tree View */}
+      <div className="flex-1">
+        <ReactFlow
+          ref={reactFlowInstance}
+          nodes={flowNodes}
+          edges={flowEdges}
+          onNodeClick={handleNodeClick}
+          nodeTypes={nodeTypes}
+          connectionLineType={ConnectionLineType.SmoothStep}
+          fitView={false}
+          minZoom={0.1}
+          maxZoom={2}
+          defaultEdgeOptions={{
+            style: { 
+              strokeWidth: 2,
+              stroke: 'hsl(var(--muted-foreground) / 0.2)'
+            },
+            animated: false
+          }}
+          onInit={(instance) => {
+            reactFlowInstance.current = instance;
+            // Initial fit view
+            setTimeout(() => {
+              if (instance.fitView) {
+                instance.fitView({
+                  duration: 300,
+                  padding: 0.1
+                });
+              }
+            }, 100);
+          }}
+        >
+          <Controls className="!border-border !bg-background/80 backdrop-blur-sm !shadow-sm [&_button]:!border-border [&_button]:!bg-background/80 [&_button]:hover:!bg-muted/50" />
+        </ReactFlow>
+      </div>
     </div>
   );
 }

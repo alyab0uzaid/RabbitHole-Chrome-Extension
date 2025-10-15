@@ -80,7 +80,7 @@ function AppContent() {
         <div className={theme}>
             {<div
                 className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
-                <Header headTitle={headTitle}/>
+                <Header headTitle={sidebarType === SidebarType.tree ? '' : headTitle}/>
                 <Sidebar
                     currentMode={currentMode}
                     sideNav={(sidebarType: SidebarType) => {
@@ -91,14 +91,7 @@ function AppContent() {
                 <main className="mr-14 grid gap-4 p-4 md:gap-8 md:p-8">
                     {sidebarType === SidebarType.home && <Home/>}
                     {sidebarType === SidebarType.tree && (
-                        <div className="h-[calc(100vh-8rem)]">
-                            {currentMode === BrowsingMode.TRACKING && (
-                                <div className="mb-4 p-4 bg-muted rounded-lg">
-                                    <p className="text-sm text-muted-foreground">
-                                        📍 Currently tracking navigation in main window
-                                    </p>
-                                </div>
-                            )}
+                        <div className="h-[calc(100vh-4rem)]">
                             <TreeView onNodeClick={async (nodeId, nodeData) => {
                                 console.log('[Sidepanel] Tree node clicked, navigating to:', nodeData.url);
 
