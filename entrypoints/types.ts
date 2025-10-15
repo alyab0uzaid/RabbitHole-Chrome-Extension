@@ -16,6 +16,8 @@ export enum MessageType {
     saveSession = "saveSession",
     saveSessionConfirmed = "saveSessionConfirmed",
     clearSession = "clearSession",
+    restoreSession = "restoreSession",
+    switchToTabTree = "switchToTabTree",
     loadSession = "loadSession",
     setLoadedTreeInfo = "setLoadedTreeInfo",
     getSessions = "getSessions",

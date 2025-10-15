@@ -73,10 +73,10 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const messageListener = (message: any) => {
       if (message.messageType === 'trackNavigation') {
-        const { articleTitle, articleUrl, sessionId } = message;
-        console.log('[TreeContext] Received trackNavigation:', articleTitle);
+        const { articleTitle, articleUrl, sessionId, tabId } = message;
+        console.log('[TreeContext] Received trackNavigation:', articleTitle, 'for tab:', tabId);
 
-        // Check if node already exists
+        // Check if node already exists in current tree
         setNodes(prevNodes => {
           const existingNode = prevNodes.find(node => node.title === articleTitle);
 
@@ -122,6 +122,29 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
         setActiveNodeId(null);
         setCurrentSessionId(null);
         setCurrentSessionName('');
+      } else if (message.messageType === 'restoreSession') {
+        // Session is being restored for a specific tab
+        const { nodes: restoredNodes, activeNodeId: restoredActiveNodeId, sessionId: restoredSessionId, tabId: restoredTabId } = message;
+        console.log('[TreeContext] Restoring session for tab', restoredTabId, 'with', restoredNodes?.length || 0, 'nodes');
+        
+        if (restoredNodes && restoredNodes.length > 0) {
+          setNodes(restoredNodes);
+          setActiveNodeId(restoredActiveNodeId);
+          setCurrentSessionId(restoredSessionId);
+          // Update session name if we have a default one
+          if (!currentSessionName) {
+            setCurrentSessionName(`Session ${new Date().toLocaleString()}`);
+          }
+        }
+      } else if (message.messageType === 'switchToTabTree') {
+        // Switch to show the tree for a specific tab
+        const { tabId: targetTabId, nodes: tabNodes, activeNodeId: tabActiveNodeId, sessionId: tabSessionId, sessionName: tabSessionName } = message;
+        console.log('[TreeContext] Switching to tree for tab', targetTabId, 'with', tabNodes?.length || 0, 'nodes');
+        
+        setNodes(tabNodes || []);
+        setActiveNodeId(tabActiveNodeId || null);
+        setCurrentSessionId(tabSessionId || null);
+        setCurrentSessionName(tabSessionName || '');
       }
     };
 

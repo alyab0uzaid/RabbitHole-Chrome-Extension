@@ -92,15 +92,35 @@ function AppContent() {
                     {sidebarType === SidebarType.home && <Home/>}
                     {sidebarType === SidebarType.tree && (
                         <div className="h-[calc(100vh-4rem)]">
-                            <TreeView onNodeClick={async (nodeId, nodeData) => {
-                                console.log('[Sidepanel] Tree node clicked, navigating to:', nodeData.url);
+                            {currentMode === BrowsingMode.TRACKING ? (
+                                <TreeView onNodeClick={async (nodeId, nodeData) => {
+                                    console.log('[Sidepanel] Tree node clicked, navigating to:', nodeData.url);
 
-                                // Get active tab and navigate it
-                                const tabs = await browser.tabs.query({active: true, currentWindow: true});
-                                if (tabs[0]?.id) {
-                                    await browser.tabs.update(tabs[0].id, { url: nodeData.url });
-                                }
-                            }}/>
+                                    // Ask background script to navigate to this URL in the tracked Wikipedia tab
+                                    try {
+                                        await browser.runtime.sendMessage({
+                                            messageType: MessageType.navigateToWikipedia,
+                                            articleUrl: nodeData.url
+                                        });
+                                    } catch (error) {
+                                        console.error('[Sidepanel] Failed to navigate Wikipedia tab:', error);
+                                        // Fallback: create new tab
+                                        await browser.tabs.create({ url: nodeData.url, active: true });
+                                    }
+                                }}/>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 p-8 text-center">
+                                    <div className="text-6xl">🌐</div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-foreground mb-2">No Wikipedia Tab Active</h3>
+                                        <p className="text-sm">
+                                            Open a Wikipedia article to start building your research tree.
+                                            <br />
+                                            Your trees will be preserved when you switch between tabs.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                     {sidebarType === SidebarType.sessions && (

@@ -28,6 +28,9 @@ export default defineBackground(() => {
         initialLoadedArticle: string | null;
     }
 
+    // Store session state per tab to preserve trees when switching tabs
+    const tabSessions: Map<number, TrackingState> = new Map();
+
     const trackingState: TrackingState = {
         isTracking: false,
         tabId: null,
@@ -96,26 +99,56 @@ export default defineBackground(() => {
                 messageType: MessageType.trackNavigation,
                 articleTitle,
                 articleUrl,
-                sessionId: trackingState.sessionId
+                sessionId: trackingState.sessionId,
+                tabId: trackingState.tabId
             }).catch(err => console.log('[Background] Could not notify sidepanel:', err));
         });
     }
 
     // Helper: Start tracking session
     function startTrackingSession(tabId: number, url: string) {
-        const sessionId = `session-${Date.now()}`;
-        trackingState.isTracking = true;
-        trackingState.tabId = tabId;
-        trackingState.sessionId = sessionId;
-        trackingState.currentUrl = url;
-        trackingState.mode = BrowsingMode.TRACKING;
+        // Check if we have a saved session for this tab
+        const savedSession = tabSessions.get(tabId);
+        
+        if (savedSession && savedSession.treeNodes.length > 0) {
+            // Restore existing session for this tab
+            console.log('[Background] Restoring existing session for tab', tabId, 'with', savedSession.treeNodes.length, 'nodes');
+            Object.assign(trackingState, savedSession);
+            trackingState.isTracking = true;
+            trackingState.tabId = tabId;
+            trackingState.currentUrl = url;
+            trackingState.mode = BrowsingMode.TRACKING;
+        } else {
+            // Create new session
+            const sessionId = `session-${Date.now()}-${tabId}`; // Include tabId to make it unique per tab
+            trackingState.isTracking = true;
+            trackingState.tabId = tabId;
+            trackingState.sessionId = sessionId;
+            trackingState.currentUrl = url;
+            trackingState.mode = BrowsingMode.TRACKING;
+            trackingState.treeNodes = [];
+            trackingState.activeNodeId = null;
+            trackingState.isLoadedTree = false;
+            trackingState.originalTreeId = null;
+            trackingState.originalTreeName = null;
+            trackingState.initialLoadedArticle = null;
 
-        console.log('[Background] Started tracking session:', sessionId, 'on tab', tabId);
+            console.log('[Background] Started new tracking session:', sessionId, 'on tab', tabId);
+
+            // Add initial article to tree only for new sessions
+            const articleTitle = getWikipediaArticleTitle(url);
+            if (articleTitle) {
+                addTreeNode(articleTitle, url);
+            }
+        }
+
+        // Save this session to tab sessions
+        tabSessions.set(tabId, { ...trackingState });
 
         // Notify content script to show tracking indicator
         browser.tabs.sendMessage(tabId, {
             messageType: MessageType.startTracking,
-            sessionId
+            sessionId: trackingState.sessionId
         }).catch(err => console.log('[Background] Could not notify content script:', err));
 
         // Notify sidepanel about mode change
@@ -125,11 +158,15 @@ export default defineBackground(() => {
             tabId
         }).catch(err => console.log('[Background] Could not notify sidepanel:', err));
 
-        // Add initial article to tree
-        const articleTitle = getWikipediaArticleTitle(url);
-        if (articleTitle) {
-            addTreeNode(articleTitle, url);
-        }
+        // Tell sidepanel to show this tab's tree
+        browser.runtime.sendMessage({
+            messageType: MessageType.switchToTabTree,
+            tabId: tabId,
+            nodes: trackingState.treeNodes,
+            activeNodeId: trackingState.activeNodeId,
+            sessionId: trackingState.sessionId,
+            sessionName: `Session ${new Date().toLocaleString()}`
+        }).catch(err => console.log('[Background] Could not switch sidepanel tree:', err));
     }
 
     // Helper: Stop tracking session
@@ -138,15 +175,19 @@ export default defineBackground(() => {
 
         console.log('[Background] Stopping tracking session:', trackingState.sessionId);
 
-        // Notify content script to hide indicator
+        // Save current session state to tab sessions before stopping
         if (trackingState.tabId) {
+            tabSessions.set(trackingState.tabId, { ...trackingState });
+            console.log('[Background] Saved session state for tab', trackingState.tabId, 'with', trackingState.treeNodes.length, 'nodes');
+            
+            // Notify content script to hide indicator
             browser.tabs.sendMessage(trackingState.tabId, {
                 messageType: MessageType.stopTracking
             }).catch(err => console.log('[Background] Could not notify content script:', err));
         }
 
         // No prompts - everything auto-saves via tree-context
-        console.log('[Background] Session ended with', trackingState.treeNodes.length, 'articles (auto-saved)');
+        console.log('[Background] Session paused with', trackingState.treeNodes.length, 'articles (preserved)');
 
         trackingState.isTracking = false;
         trackingState.tabId = null;
@@ -154,15 +195,10 @@ export default defineBackground(() => {
         trackingState.currentUrl = null;
         trackingState.mode = BrowsingMode.LOOKUP;
 
-        // Clear current tree
-        trackingState.treeNodes = [];
-        trackingState.activeNodeId = null;
-        trackingState.isLoadedTree = false;
-        trackingState.originalTreeId = null;
-        trackingState.originalTreeName = null;
-        trackingState.initialLoadedArticle = null;
+        // DON'T clear the tree - just stop tracking
+        // The tree will be restored when user returns to Wikipedia tab
 
-        // Clear from storage
+        // Clear from storage (but preserve in tabSessions)
         browser.storage.local.set({
             rabbithole_current_session: {
                 nodes: [],
@@ -171,12 +207,8 @@ export default defineBackground(() => {
             }
         });
 
-        // Notify sidepanel to clear the tree UI
-        browser.runtime.sendMessage({
-            messageType: MessageType.clearSession
-        }).catch(err => console.log('[Background] Could not notify sidepanel:', err));
-
-        // Notify sidepanel about mode change
+        // Don't notify sidepanel to clear the tree - let it stay visible
+        // Just notify about mode change
         browser.runtime.sendMessage({
             messageType: MessageType.modeChanged,
             mode: BrowsingMode.LOOKUP
@@ -215,11 +247,17 @@ export default defineBackground(() => {
         }
     });
 
-    // Listen for tab closes - if tracking tab is closed, stop tracking
+    // Listen for tab closes - if tracking tab is closed, stop tracking and clean up
     browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
         if (trackingState.isTracking && trackingState.tabId === tabId) {
             console.log('[Background] Tracking tab closed, stopping session');
             stopTrackingSession();
+        }
+        
+        // Clean up saved session for this tab
+        if (tabSessions.has(tabId)) {
+            console.log('[Background] Cleaning up session for closed tab', tabId);
+            tabSessions.delete(tabId);
         }
     });
 
@@ -278,11 +316,57 @@ export default defineBackground(() => {
         if (tab.url) {
             const mode = getModeForUrl(tab.url);
 
-            // Check if we need to update tracking state
-            if (mode === BrowsingMode.TRACKING && !trackingState.isTracking) {
-                startTrackingSession(activeInfo.tabId, tab.url);
-            } else if (mode === BrowsingMode.LOOKUP && trackingState.isTracking && trackingState.tabId === activeInfo.tabId) {
-                stopTrackingSession();
+            // Always save current session before switching
+            if (trackingState.isTracking && trackingState.tabId) {
+                tabSessions.set(trackingState.tabId, { ...trackingState });
+                console.log('[Background] Saved session for tab', trackingState.tabId, 'before switching');
+            }
+
+            // If switching to a Wikipedia tab, show its tree in the sidepanel
+            if (mode === BrowsingMode.TRACKING) {
+                const savedSession = tabSessions.get(activeInfo.tabId);
+                
+                if (savedSession && savedSession.treeNodes.length > 0) {
+                    // Switch to show this tab's tree in sidepanel
+                    console.log('[Background] Switching to Wikipedia tab with existing tree, showing in sidepanel');
+                    
+                    // Update tracking state to this tab's session
+                    Object.assign(trackingState, savedSession);
+                    trackingState.isTracking = true;
+                    trackingState.tabId = activeInfo.tabId;
+                    trackingState.currentUrl = tab.url;
+                    trackingState.mode = BrowsingMode.TRACKING;
+                    
+                    // Tell sidepanel to show this tab's tree
+                    browser.runtime.sendMessage({
+                        messageType: MessageType.switchToTabTree,
+                        tabId: activeInfo.tabId,
+                        nodes: trackingState.treeNodes,
+                        activeNodeId: trackingState.activeNodeId,
+                        sessionId: trackingState.sessionId,
+                        sessionName: `Session ${new Date(trackingState.treeNodes[0]?.timestamp || Date.now()).toLocaleString()}`
+                    }).catch(err => console.log('[Background] Could not switch sidepanel tree:', err));
+                    
+                } else {
+                    // Start new tracking session for this tab
+                    console.log('[Background] Starting new tracking session for Wikipedia tab');
+                    startTrackingSession(activeInfo.tabId, tab.url);
+                }
+            } else {
+                // Not a Wikipedia tab, stop tracking
+                trackingState.isTracking = false;
+                trackingState.tabId = null;
+                trackingState.mode = BrowsingMode.LOOKUP;
+                
+                // Tell sidepanel to hide the tree since we're not on Wikipedia
+                browser.runtime.sendMessage({
+                    messageType: MessageType.switchToTabTree,
+                    tabId: null,
+                    nodes: [],
+                    activeNodeId: null,
+                    sessionId: null,
+                    sessionName: ''
+                }).catch(err => console.log('[Background] Could not hide tree:', err));
             }
 
             // Always notify sidepanel of current mode
@@ -412,14 +496,31 @@ export default defineBackground(() => {
             console.log('[Background] Forwarding navigation tracking:', message.articleTitle);
             return true;
         } else if (message.messageType === MessageType.navigateToWikipedia) {
-            // Open Wikipedia URL in a NEW tab
-            console.log('[Background] Opening Wikipedia in new tab:', message.articleUrl);
-            browser.tabs.create({ url: message.articleUrl, active: true }).then(() => {
-                sendResponse({ success: true });
-            }).catch((error) => {
-                console.error('[Background] Error creating tab:', error);
-                sendResponse({ success: false, error: error.message });
-            });
+            // Navigate the currently tracked Wikipedia tab, or create new one if none exists
+            console.log('[Background] Navigating to Wikipedia URL:', message.articleUrl);
+            
+            if (trackingState.isTracking && trackingState.tabId) {
+                // Navigate the currently tracked tab
+                console.log('[Background] Navigating tracked Wikipedia tab:', trackingState.tabId);
+                browser.tabs.update(trackingState.tabId, { 
+                    url: message.articleUrl,
+                    active: true 
+                }).then(() => {
+                    sendResponse({ success: true });
+                }).catch((error) => {
+                    console.error('[Background] Error navigating tab:', error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            } else {
+                // No tracked tab, create new one
+                console.log('[Background] No tracked tab, creating new Wikipedia tab');
+                browser.tabs.create({ url: message.articleUrl, active: true }).then(() => {
+                    sendResponse({ success: true });
+                }).catch((error) => {
+                    console.error('[Background] Error creating tab:', error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            }
             return true; // Keep message channel open for async response
         } else if (message.messageType === MessageType.setLoadedTreeInfo) {
             // Mark that we're continuing from a loaded tree
