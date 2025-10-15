@@ -18,7 +18,7 @@ const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
 };
 
-// Convert tree data to React Flow format with proper branching layout
+// Convert tree data to React Flow format with proper branching layout and collision avoidance
 function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | null): { nodes: Node<WikiNodeData>[]; edges: Edge[] } {
   const nodes: Node<WikiNodeData>[] = [];
   const edges: Edge[] = [];
@@ -26,8 +26,10 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
   if (treeNodes.length === 0) return { nodes, edges };
 
   const nodePositions: { [id: string]: { x: number; y: number } } = {};
-  const horizontalSpacing = 180;
-  const verticalSpacing = 120;
+  const horizontalSpacing = 240; // Increased spacing
+  const verticalSpacing = 140;   // Increased spacing
+  const nodeWidth = 220;         // Approximate node width
+  const nodeHeight = 60;         // Approximate node height
 
   // Build parent-children map
   const childrenMap: { [id: string]: WikiTreeNode[] } = {};
@@ -48,7 +50,6 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
   nodePositions[rootNode.id] = { x: 0, y: 0 };
 
   // Calculate total width needed for the entire tree
-  let globalX = 0;
   const calculateTreeWidth = (node: WikiTreeNode): number => {
     const children = childrenMap[node.id] || [];
     if (children.length === 0) return 1;
@@ -93,6 +94,44 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
 
   // Start positioning from root (root is already positioned at center)
   positionSubtree(rootNode, 0);
+
+  // Post-process to prevent overlaps
+  const preventOverlaps = () => {
+    const positionArray = Object.entries(nodePositions);
+    
+    // Sort by y-coordinate (depth), then by x-coordinate
+    positionArray.sort((a, b) => {
+      if (a[1].y !== b[1].y) return a[1].y - b[1].y;
+      return a[1].x - b[1].x;
+    });
+
+    // Check for overlaps and adjust positions
+    for (let i = 0; i < positionArray.length; i++) {
+      const [nodeId, pos] = positionArray[i];
+      
+      // Check against all previous nodes at the same depth
+      for (let j = 0; j < i; j++) {
+        const [otherNodeId, otherPos] = positionArray[j];
+        
+        // Only check nodes at the same depth (same y-coordinate)
+        if (Math.abs(pos.y - otherPos.y) < verticalSpacing * 0.5) {
+          const distance = Math.abs(pos.x - otherPos.x);
+          const minDistance = horizontalSpacing;
+          
+          // If nodes are too close, adjust the current node's position
+          if (distance < minDistance) {
+            const direction = pos.x > otherPos.x ? 1 : -1;
+            const newX = otherPos.x + direction * minDistance;
+            nodePositions[nodeId] = { ...pos, x: newX };
+            positionArray[i][1] = nodePositions[nodeId];
+          }
+        }
+      }
+    }
+  };
+
+  // Apply overlap prevention
+  preventOverlaps();
 
   // Create nodes with calculated positions
   treeNodes.forEach(node => {
