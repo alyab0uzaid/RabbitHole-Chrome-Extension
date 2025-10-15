@@ -124,12 +124,14 @@ function AppContent() {
                         </div>
                     )}
                     {sidebarType === SidebarType.sessions && (
-                        <SessionsPage
-                            onSwitchToTree={() => {
-                                setSidebarType(SidebarType.tree);
-                                setHeadTitle('tree');
-                            }}
-                        />
+                        <div className="h-[calc(100vh-4rem)]">
+                            <SessionsPage
+                                onSwitchToTree={() => {
+                                    setSidebarType(SidebarType.tree);
+                                    setHeadTitle('tree');
+                                }}
+                            />
+                        </div>
                     )}
                     {sidebarType === SidebarType.settings && <SettingsPage/>}
                 </main>

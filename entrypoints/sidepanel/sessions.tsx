@@ -5,6 +5,155 @@ import { Card } from '@/components/ui/card';
 import { Trash2, Play, Calendar, FileText } from 'lucide-react';
 import { Alert } from '@/components/ui/alert';
 
+// Component to render a tree minimap using the same layout algorithm as the main tree
+const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
+  if (nodes.length === 0) return null;
+
+  const svgWidth = 120;
+  const svgHeight = 80;
+  const padding = 8;
+  const nodeRadius = 2.5;
+
+  // Use the same positioning algorithm as the main tree
+  const calculatePositions = () => {
+    const positions: { [id: string]: { x: number; y: number } } = {};
+    
+    if (nodes.length === 0) return positions;
+
+    const horizontalSpacing = 25; // Scaled down for minimap
+    const verticalSpacing = 20;   // Scaled down for minimap
+
+    // Build parent-children map
+    const childrenMap: { [id: string]: any[] } = {};
+    nodes.forEach(node => {
+      if (node.parentId) {
+        if (!childrenMap[node.parentId]) {
+          childrenMap[node.parentId] = [];
+        }
+        childrenMap[node.parentId].push(node);
+      }
+    });
+
+    // Find root node
+    const rootNode = nodes.find(node => node.parentId === null);
+    if (!rootNode) return positions;
+
+    // Position root node at center
+    positions[rootNode.id] = { 
+      x: svgWidth / 2, 
+      y: padding + verticalSpacing / 2 
+    };
+
+    // Calculate total width needed for the entire tree
+    const calculateTreeWidth = (node: any): number => {
+      const children = childrenMap[node.id] || [];
+      if (children.length === 0) return 1;
+      return children.reduce((sum, child) => sum + calculateTreeWidth(child), 0);
+    };
+
+    const totalTreeWidth = calculateTreeWidth(rootNode);
+    const startX = (svgWidth - (totalTreeWidth - 1) * horizontalSpacing) / 2;
+    
+    // Position nodes recursively starting from root
+    let currentX = startX;
+    
+    const positionSubtree = (node: any, depth: number): { minX: number; maxX: number } => {
+      const children = childrenMap[node.id] || [];
+      
+      if (children.length === 0) {
+        // Leaf node - position at current X
+        const x = currentX;
+        currentX += horizontalSpacing;
+        positions[node.id] = { x, y: padding + depth * verticalSpacing };
+        return { minX: x, maxX: x };
+      }
+
+      // Position all children first to get their range
+      const childRanges = children.map(child => {
+        const range = positionSubtree(child, depth + 1);
+        return range;
+      });
+
+      // Calculate the range of all children
+      const minChildX = Math.min(...childRanges.map(r => r.minX));
+      const maxChildX = Math.max(...childRanges.map(r => r.maxX));
+      
+      // For non-root nodes, position parent at the center of its children
+      if (node.id !== rootNode.id) {
+        const x = (minChildX + maxChildX) / 2;
+        positions[node.id] = { x, y: padding + depth * verticalSpacing };
+      }
+      
+      return { minX: minChildX, maxX: maxChildX };
+    };
+
+    // Start positioning from root (root is already positioned at center)
+    positionSubtree(rootNode, 0);
+
+    return positions;
+  };
+
+  const nodePositions = calculatePositions();
+
+  // Find bounds to center the tree
+  const allPositions = Object.values(nodePositions);
+  if (allPositions.length === 0) return null;
+
+  const minX = Math.min(...allPositions.map(p => p.x));
+  const maxX = Math.max(...allPositions.map(p => p.x));
+  const minY = Math.min(...allPositions.map(p => p.y));
+  const maxY = Math.max(...allPositions.map(p => p.y));
+
+  const treeWidth = maxX - minX;
+  const treeHeight = maxY - minY;
+  const offsetX = (svgWidth - treeWidth) / 2 - minX;
+  const offsetY = (svgHeight - treeHeight) / 2 - minY;
+
+  return (
+    <div className="w-full h-20 bg-muted/20 rounded-t-lg relative overflow-hidden flex items-center justify-center">
+      <svg width={svgWidth} height={svgHeight} className="block">
+        {/* Render edges first */}
+        {nodes.map((node) => {
+          if (node.parentId && nodePositions[node.parentId] && nodePositions[node.id]) {
+            const parent = nodePositions[node.parentId];
+            const child = nodePositions[node.id];
+            return (
+              <line
+                key={`edge-${node.id}`}
+                x1={parent.x + offsetX}
+                y1={parent.y + offsetY}
+                x2={child.x + offsetX}
+                y2={child.y + offsetY}
+                stroke="hsl(var(--muted-foreground) / 0.4)"
+                strokeWidth="1.5"
+              />
+            );
+          }
+          return null;
+        })}
+        
+        {/* Render nodes */}
+        {nodes.map((node) => {
+          const pos = nodePositions[node.id];
+          if (!pos) return null;
+          
+          return (
+            <circle
+              key={node.id}
+              cx={pos.x + offsetX}
+              cy={pos.y + offsetY}
+              r={nodeRadius}
+              fill={node.parentId === null ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.7)"}
+              stroke="hsl(var(--background))"
+              strokeWidth="1"
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+};
+
 interface SessionsPageProps {
   onSwitchToTree?: () => void;
 }
@@ -34,31 +183,32 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Saved Sessions</h2>
-        <p className="text-sm text-muted-foreground">
-          Load and manage your Wikipedia exploration journeys
-        </p>
-      </div>
-
+    <div className="h-full flex flex-col">
       {/* Saved Sessions List */}
-      <div>
-
+      <div className="flex-1 overflow-y-auto">
         {savedTrees.length === 0 ? (
-          <Alert className="border-dashed">
-            <FileText className="h-4 w-4" />
-            <p className="text-sm ml-2">
-              No saved sessions yet. Save your current research to revisit it later!
-            </p>
-          </Alert>
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 p-8 text-center">
+            <div className="text-6xl">📚</div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Saved Sessions</h3>
+              <p className="text-sm">
+                Your research sessions will appear here once you save them.
+                <br />
+                Build a tree and it will be automatically saved!
+              </p>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4 p-1">
             {savedTrees.map((tree) => (
-              <Card key={tree.id} className="p-4 hover:bg-muted/50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold mb-1">{tree.name}</h4>
+              <Card key={tree.id} className="overflow-hidden hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
+                {/* Tree Minimap */}
+                <TreeMinimap nodes={tree.nodes} />
+                
+                {/* Card Content */}
+                <div className="p-4">
+                  <div className="mb-3">
+                    <h4 className="font-semibold text-base mb-1 truncate">{tree.name}</h4>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3 w-3" />
@@ -71,12 +221,12 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     </div>
                   </div>
 
+                  {/* Action Buttons */}
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleLoadSession(tree.id)}
                       size="sm"
-                      variant="outline"
-                      className="gap-1"
+                      className="flex-1 gap-1"
                     >
                       <Play className="h-3 w-3" />
                       Load
