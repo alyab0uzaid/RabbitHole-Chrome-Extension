@@ -45,7 +45,7 @@ async function fetchWikipediaPreview(searchText: string): Promise<WikipediaPrevi
 }
 
 export default defineContentScript({
-    matches: ['*://*.wikipedia.org/*'],
+    matches: ['*://*/*'],
     runAt: 'document_end',
     main() {
         let previewCard: HTMLElement | null = null;
@@ -343,8 +343,10 @@ export default defineContentScript({
             }, 200);
         }
 
-        // Initialize minimap on page load
-        showTrackingIndicator();
+        // Initialize minimap on page load (only on Wikipedia)
+        if (window.location.hostname.includes('wikipedia.org')) {
+            showTrackingIndicator();
+        }
 
         // Listen for tracking mode messages
         browser.runtime.onMessage.addListener((message: ExtMessage) => {
@@ -417,6 +419,10 @@ export default defineContentScript({
             const highlightElement = document.createElement('span');
             highlightElement.className = 'rabbithole-highlight';
             highlightElement.style.cursor = 'pointer';
+            highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
+            highlightElement.style.borderRadius = '2px';
+            highlightElement.style.padding = '0 2px';
+            highlightElement.style.transition = 'background-color 0.2s ease';
             
             try {
                 range.surroundContents(highlightElement);
@@ -433,10 +439,12 @@ export default defineContentScript({
                 
                 // Add hover event listeners
                 highlightElement.addEventListener('mouseenter', (e) => {
+                    highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.5)';
                     showPreviewCard(selectedText, highlightElement);
                 });
                 
                 highlightElement.addEventListener('mouseleave', (e) => {
+                    highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
                     // Check if mouse is moving to tooltip
                     const relatedTarget = e.relatedTarget as Node;
                     if (previewCard && previewCard.contains(relatedTarget)) {

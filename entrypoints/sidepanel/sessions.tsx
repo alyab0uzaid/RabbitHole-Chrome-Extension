@@ -111,7 +111,7 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
   const offsetY = (svgHeight - treeHeight) / 2 - minY;
 
   return (
-    <div className="w-full h-20 bg-muted/20 rounded-t-lg relative overflow-hidden flex items-center justify-center">
+    <div className="w-32 h-full bg-muted/20 rounded-l-lg relative overflow-hidden flex items-center justify-center">
       <svg width={svgWidth} height={svgHeight} className="block">
         {/* Render edges first */}
         {nodes.map((node) => {
@@ -208,43 +208,47 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           <div className="grid grid-cols-1 gap-4 p-1 pb-6">
             {savedTrees.map((tree) => (
               <Card key={tree.id} className="overflow-hidden hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-                {/* Tree Minimap */}
-                <TreeMinimap nodes={tree.nodes} />
-                
-                {/* Card Content */}
-                <div className="p-4">
-                  <div className="mb-3">
-                    <h4 className="font-semibold text-base mb-1 truncate">{tree.name}</h4>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        {tree.nodes.length} {tree.nodes.length === 1 ? 'node' : 'nodes'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(tree.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                <div className="flex">
+                  {/* Tree Minimap - Left Side */}
+                  <div className="flex-shrink-0">
+                    <TreeMinimap nodes={tree.nodes} />
                   </div>
+                  
+                  {/* Card Content - Right Side */}
+                  <div className="flex-1 p-4 flex flex-col justify-between">
+                    <div className="mb-3">
+                      <h4 className="font-semibold text-base mb-1 truncate">{tree.name}</h4>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <FileText className="h-3 w-3" />
+                          {tree.nodes.length} {tree.nodes.length === 1 ? 'node' : 'nodes'}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(tree.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleLoadSession(tree.id)}
-                      size="sm"
-                      className="flex-1 gap-1"
-                    >
-                      <Play className="h-3 w-3" />
-                      Dive In
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteSession(tree.id)}
-                      size="sm"
-                      variant="outline"
-                      className="gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleLoadSession(tree.id)}
+                        size="sm"
+                        className="flex-1 gap-1"
+                      >
+                        <Play className="h-3 w-3" />
+                        Dive In
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteSession(tree.id)}
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </Card>
