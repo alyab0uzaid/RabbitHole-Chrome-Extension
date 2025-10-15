@@ -13,12 +13,12 @@ export enum SidebarType {
 }
 
 const Sidebar = (
-    {sideNav, closeContent, currentMode}: {
+    {sideNav, closeContent, currentMode, activeSidebarType}: {
         sideNav: (sidebarType: SidebarType) => void,
         closeContent?: () => void,
-        currentMode?: BrowsingMode
+        currentMode?: BrowsingMode,
+        activeSidebarType: SidebarType
     }) => {
-    const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.home);
     return (
         <aside
             className="absolute inset-y-0 right-0 z-10 flex w-14 flex-col border-r bg-background border-l-[1px]">
@@ -37,9 +37,8 @@ const Sidebar = (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.home ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
+                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.home ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
                                 href="#" onClick={() => {
-                                setSidebarType(SidebarType.home)
                                 sideNav(SidebarType.home)
                             }}
                             >
@@ -57,9 +56,8 @@ const Sidebar = (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.sessions ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
+                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.sessions ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
                                 href="#" onClick={() => {
-                                setSidebarType(SidebarType.sessions)
                                 sideNav(SidebarType.sessions)
                             }}
                             >
@@ -77,9 +75,8 @@ const Sidebar = (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${sidebarType == SidebarType.settings ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""} `}
+                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.settings ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""} `}
                                 href="#" onClick={() => {
-                                setSidebarType(SidebarType.settings)
                                 sideNav(SidebarType.settings)
                             }}
                             >

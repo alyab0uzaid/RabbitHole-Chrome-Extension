@@ -3,7 +3,16 @@ import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trash2, Play, Calendar, FileText } from 'lucide-react';
-import { Alert } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Component to render a tree minimap using the same layout algorithm as the main tree
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
@@ -163,6 +172,9 @@ interface SessionsPageProps {
 
 export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const { savedTrees, loadTree, deleteSavedTree } = useTree();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [treeToDelete, setTreeToDelete] = useState<string | null>(null);
+  const [treeToDeleteName, setTreeToDeleteName] = useState<string>('');
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -176,13 +188,22 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     });
   };
 
-  const handleDeleteSession = (treeId: string) => {
-    const confirm = window.confirm(
-      'Are you sure you want to delete this rabbit hole? This cannot be undone.'
-    );
-    if (!confirm) return;
+  const handleDeleteSession = (treeId: string, treeName: string) => {
+    console.log('[Sessions] Delete clicked for:', treeName);
+    setTreeToDelete(treeId);
+    setTreeToDeleteName(treeName);
+    setDeleteDialogOpen(true);
+    console.log('[Sessions] Dialog state set to true');
+  };
 
-    deleteSavedTree(treeId);
+  const confirmDelete = () => {
+    if (treeToDelete) {
+      deleteSavedTree(treeToDelete);
+      // Reset all dialog state
+      setTreeToDelete(null);
+      setTreeToDeleteName('');
+      setDeleteDialogOpen(false);
+    }
   };
 
   return (
@@ -241,7 +262,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         Dive In
                       </Button>
                       <Button
-                        onClick={() => handleDeleteSession(tree.id)}
+                        onClick={() => handleDeleteSession(tree.id, tree.name)}
                         size="sm"
                         variant="outline"
                         className="gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
@@ -256,6 +277,28 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
+              This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

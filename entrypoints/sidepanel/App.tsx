@@ -78,6 +78,7 @@ function AppContent() {
                 className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
                 <Sidebar
                     currentMode={currentMode}
+                    activeSidebarType={sidebarType}
                     sideNav={(sidebarType: SidebarType) => {
                         setSidebarType(sidebarType);
                     }}
