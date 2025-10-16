@@ -4,6 +4,7 @@ import {
   Node,
   Edge,
   Controls,
+  MiniMap,
   ConnectionLineType,
   Panel,
   useReactFlow

@@ -62,12 +62,8 @@ export default defineContentScript({
             if (!trackingIndicator) return;
             
             if (currentTreeNodes.length === 0) {
-                // Show empty state
-                trackingIndicator.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.7); font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center;">
-                        Click to explore
-                    </div>
-                `;
+                // Show empty state - just leave it empty
+                trackingIndicator.innerHTML = '';
                 return;
             }
 
@@ -78,8 +74,8 @@ export default defineContentScript({
 
         // Function to render the minimap as SVG (using exact same algorithm as main tree)
         function renderMinimapSVG(nodes: any[], activeNodeId?: string): string {
-            const svgWidth = 184;  // 200 - 16 (padding)
-            const svgHeight = 134; // 150 - 16 (padding)
+            const svgWidth = 200;  // Match container width
+            const svgHeight = 150; // Match container height
             const nodeWidth = 14;
             const nodeHeight = 10;
             const horizontalSpacing = 22;  // Scaled down from main tree
@@ -149,55 +145,44 @@ export default defineContentScript({
             // Start positioning from root (root is already positioned at center)
             positionSubtree(rootNode, 0);
 
-            // Center the tree in the SVG viewport
-            const allPositions = Object.values(nodePositions);
-            const minX = Math.min(...allPositions.map(p => p.x));
-            const maxX = Math.max(...allPositions.map(p => p.x));
-            const minY = Math.min(...allPositions.map(p => p.y));
-            const maxY = Math.max(...allPositions.map(p => p.y));
-            
-            const treeWidth = maxX - minX;
-            const treeHeight = maxY - minY;
-            
+            // Always center the active node in the viewport
             let offsetX, offsetY;
             
-            if (treeWidth <= svgWidth && treeHeight <= svgHeight) {
-                // Tree fits completely - center it
-                offsetX = (svgWidth - treeWidth) / 2 - minX;
-                offsetY = (svgHeight - treeHeight) / 2 - minY;
-            } else if (activeNodeId && nodePositions[activeNodeId]) {
-                // Tree is larger than viewport - show as much as possible while keeping active node visible
+            if (activeNodeId && nodePositions[activeNodeId]) {
+                // Always center the active node
                 const activePos = nodePositions[activeNodeId];
-                const padding = 10; // Padding from edges
-                
-                // Start by trying to center the whole tree
-                offsetX = (svgWidth - treeWidth) / 2 - minX;
-                offsetY = (svgHeight - treeHeight) / 2 - minY;
-                
-                // Check if active node is visible with this offset
-                const activeScreenX = activePos.x + offsetX;
-                const activeScreenY = activePos.y + offsetY;
-                
-                // Adjust offset to keep active node visible
-                if (activeScreenX < padding) {
-                    offsetX = padding - activePos.x;
-                } else if (activeScreenX > svgWidth - padding) {
-                    offsetX = svgWidth - padding - activePos.x;
-                }
-                
-                if (activeScreenY < padding) {
-                    offsetY = padding - activePos.y;
-                } else if (activeScreenY > svgHeight - padding) {
-                    offsetY = svgHeight - padding - activePos.y;
-                }
+                offsetX = svgWidth / 2 - activePos.x;
+                offsetY = svgHeight / 2 - activePos.y;
             } else {
-                // No active node - just center the tree
-                offsetX = (svgWidth - treeWidth) / 2 - minX;
-                offsetY = (svgHeight - treeHeight) / 2 - minY;
+                // No active node - center the root node
+                const rootPos = nodePositions[rootNode.id];
+                offsetX = svgWidth / 2 - rootPos.x;
+                offsetY = svgHeight / 2 - rootPos.y;
             }
 
-            // Generate SVG
-            let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="display: block;">`;
+            // Generate SVG with drop shadow filter and animations
+            let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="display: block; margin: 0 auto;">
+                <defs>
+                    <filter id="nodeShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+                    </filter>
+                </defs>
+                <style>
+                    @keyframes blurFadeIn {
+                        from { 
+                            opacity: 0; 
+                            filter: blur(8px);
+                        }
+                        to { 
+                            opacity: 1; 
+                            filter: blur(0px);
+                        }
+                    }
+                    .blur-fade-in {
+                        opacity: 0;
+                        animation: blurFadeIn 0.3s ease-out forwards;
+                    }
+                </style>`;
             
             // Draw edges first (same as main tree - SmoothStep style)
             nodes.forEach(node => {
@@ -215,11 +200,11 @@ export default defineContentScript({
                     const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
                     
                     const isActive = node.id === activeNodeId;
-                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'rgba(100,200,255,0.6)' : 'rgba(255,255,255,0.2)'}" stroke-width="${isActive ? '2' : '1.5'}"/>`;
+                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'rgba(100,200,255,0.6)' : 'rgba(255,255,255,0.2)'}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                 }
             });
 
-            // Draw nodes (completely solid fill, current node blue) - drawn AFTER edges so they're on top
+            // Draw nodes as circles with drop shadow - drawn AFTER edges so they're on top
             nodes.forEach(node => {
                 const pos = nodePositions[node.id];
                 if (pos) {
@@ -235,7 +220,8 @@ export default defineContentScript({
                         fillColor = 'rgb(200,200,200)'; // Solid grey for others
                     }
                     
-                    svgContent += `<rect x="${pos.x + offsetX - nodeWidth/2}" y="${pos.y + offsetY - nodeHeight/2}" width="${nodeWidth}" height="${nodeHeight}" rx="2" fill="${fillColor}" stroke="rgba(0,0,0,0.5)" stroke-width="1.5"/>`;
+                    const radius = 6; // Circle radius
+                    svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="black" stroke-width="0.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
                 }
             });
 
@@ -260,13 +246,12 @@ export default defineContentScript({
                 background: 'rgba(0, 0, 0, 0.5)', // 50% black translucent
                 borderRadius: '8px',
                 border: '2px solid rgba(255, 255, 255, 0.7)', // White/grey solid border
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.4)',
                 zIndex: '999998',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 backdropFilter: 'blur(10px)',
-                overflow: 'hidden',
-                padding: '8px'
+                overflow: 'hidden'
             });
 
             // Hover effect
