@@ -30,9 +30,20 @@ export default defineBackground(() => {
 
     // Store session state per tab - each tab has its own independent tree
     const tabSessions: Map<number, TrackingState> = new Map();
-
+    
     // Current active tab state (for sidepanel display)
     let activeTabId: number | null = null;
+
+    // Load tab sessions from storage on startup (in case service worker was restarted)
+    browser.storage.local.get('rabbithole_tab_sessions').then((data) => {
+        if (data.rabbithole_tab_sessions) {
+            const sessions = data.rabbithole_tab_sessions;
+            console.log('[Background] Restoring', Object.keys(sessions).length, 'tab sessions from storage');
+            for (const [tabId, session] of Object.entries(sessions)) {
+                tabSessions.set(parseInt(tabId), session as TrackingState);
+            }
+        }
+    }).catch(err => console.error('[Background] Error loading tab sessions:', err));
 
     // Helper: Get or create session for a tab
     function getTabSession(tabId: number): TrackingState {
@@ -60,6 +71,25 @@ export default defineBackground(() => {
             return tabSessions.get(activeTabId)!;
         }
         return null;
+    }
+
+    // Helper: Persist tab sessions to storage
+    async function persistTabSessions() {
+        try {
+            const sessionsObject: Record<number, TrackingState> = {};
+            tabSessions.forEach((session, tabId) => {
+                // Only persist sessions with trees
+                if (session.treeNodes.length > 0) {
+                    sessionsObject[tabId] = session;
+                }
+            });
+            await browser.storage.local.set({
+                rabbithole_tab_sessions: sessionsObject
+            });
+            console.log('[Background] Persisted', Object.keys(sessionsObject).length, 'tab sessions to storage');
+        } catch (err) {
+            console.error('[Background] Error persisting tab sessions:', err);
+        }
     }
 
     // No longer needed - tabs manage their own sessions
@@ -171,6 +201,9 @@ export default defineBackground(() => {
         
         // Auto-save the tree to storage
         autoSaveTabTree(tabId);
+        
+        // Persist tab sessions to survive service worker restarts
+        persistTabSessions();
     }
 
     // Helper: Auto-save a tab's tree to storage
@@ -564,6 +597,9 @@ export default defineBackground(() => {
                     
                     // Update sidepanel
                     updateSidepanelForTab(tabId);
+                    
+                    // Persist tab sessions
+                    persistTabSessions();
                 } else {
                     // Non-Wikipedia tab - create new tab
                     console.log('[Background] Creating new tab for loaded tree:', message.lastVisitedNodeUrl);
@@ -581,6 +617,9 @@ export default defineBackground(() => {
                         // Update sidepanel to show the new tab's tree
                         activeTabId = newTab.id!;
                         updateSidepanelForTab(newTab.id!);
+                        
+                        // Persist tab sessions
+                        persistTabSessions();
                     });
                 }
             }).catch(err => console.log('[Background] Error loading tree:', err));
