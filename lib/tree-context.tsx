@@ -59,6 +59,11 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
           setSavedTrees(savedData[STORAGE_KEY_SAVED_SESSIONS] || []);
           console.log('[TreeContext] Loaded saved sessions from storage');
         }
+        
+        // Request current tree from background script (for active tab)
+        console.log('[TreeContext] Requesting current tree from background');
+        browser.runtime.sendMessage({ messageType: 'getCurrentTree' })
+          .catch(err => console.log('[TreeContext] Could not request current tree:', err));
       } catch (error) {
         console.error('[TreeContext] Error loading from storage:', error);
       } finally {

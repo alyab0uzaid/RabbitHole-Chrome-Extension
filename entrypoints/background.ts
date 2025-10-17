@@ -70,46 +70,60 @@ export default defineBackground(() => {
     // Handle tab activation to update sidepanel
     browser.tabs.onActivated.addListener(async (activeInfo) => {
         activeTabId = activeInfo.tabId;
-        const tab = await browser.tabs.get(activeTabId);
-        const session = tabSessions.get(activeTabId);
         
-        // Check if this is a Wikipedia tab
-        const isWikipediaTab = tab.url?.includes('wikipedia.org');
-        
-        if (isWikipediaTab && session && session.treeNodes.length > 0) {
-            // Wikipedia tab with tree - show it
-            console.log('[Background] Switched to Wikipedia tab with tree');
-            updateSidepanelForTab(activeTabId);
-            browser.runtime.sendMessage({
-                messageType: MessageType.modeChanged,
-                mode: BrowsingMode.TRACKING,
-                tabId: activeTabId
-            }).catch(err => console.log('[Background] Could not notify mode change:', err));
-        } else if (isWikipediaTab && (!session || session.treeNodes.length === 0)) {
-            // Wikipedia tab but no tree yet - will start tracking when page loads
-            console.log('[Background] Switched to Wikipedia tab without tree');
-            browser.runtime.sendMessage({
-                messageType: MessageType.modeChanged,
-                mode: BrowsingMode.TRACKING,
-                tabId: activeTabId
-            }).catch(err => console.log('[Background] Could not notify mode change:', err));
-        } else {
-            // Not a Wikipedia tab - clear sidepanel and show welcome screen
-            console.log('[Background] Switched to non-Wikipedia tab - clearing sidepanel');
-            browser.runtime.sendMessage({
-                messageType: MessageType.switchToTabTree,
-                tabId: null,
-                nodes: [],
-                activeNodeId: null,
-                sessionId: null,
-                sessionName: ''
-            }).catch(err => console.log('[Background] Could not clear sidepanel:', err));
+        try {
+            const tab = await browser.tabs.get(activeTabId);
+            const session = tabSessions.get(activeTabId);
             
-            browser.runtime.sendMessage({
-                messageType: MessageType.modeChanged,
-                mode: BrowsingMode.LOOKUP,
-                tabId: null
-            }).catch(err => console.log('[Background] Could not notify mode change:', err));
+            // Check if this is a Wikipedia tab
+            const isWikipediaTab = tab.url?.includes('wikipedia.org');
+            
+            if (isWikipediaTab && session && session.treeNodes.length > 0) {
+                // Wikipedia tab with tree - show it
+                console.log('[Background] Switched to Wikipedia tab', activeTabId, 'with tree of', session.treeNodes.length, 'nodes');
+                updateSidepanelForTab(activeTabId);
+                browser.runtime.sendMessage({
+                    messageType: MessageType.modeChanged,
+                    mode: BrowsingMode.TRACKING,
+                    tabId: activeTabId
+                }).catch(err => console.log('[Background] Could not notify mode change:', err));
+            } else if (isWikipediaTab && (!session || session.treeNodes.length === 0)) {
+                // Wikipedia tab but no tree yet - clear sidepanel, show welcome screen
+                console.log('[Background] Switched to Wikipedia tab without tree - showing welcome screen');
+                browser.runtime.sendMessage({
+                    messageType: MessageType.switchToTabTree,
+                    tabId: null,
+                    nodes: [],
+                    activeNodeId: null,
+                    sessionId: null,
+                    sessionName: ''
+                }).catch(err => console.log('[Background] Could not clear sidepanel:', err));
+                
+                browser.runtime.sendMessage({
+                    messageType: MessageType.modeChanged,
+                    mode: BrowsingMode.TRACKING,
+                    tabId: activeTabId
+                }).catch(err => console.log('[Background] Could not notify mode change:', err));
+            } else {
+                // Not a Wikipedia tab - clear sidepanel and show welcome screen
+                console.log('[Background] Switched to non-Wikipedia tab - clearing sidepanel');
+                browser.runtime.sendMessage({
+                    messageType: MessageType.switchToTabTree,
+                    tabId: null,
+                    nodes: [],
+                    activeNodeId: null,
+                    sessionId: null,
+                    sessionName: ''
+                }).catch(err => console.log('[Background] Could not clear sidepanel:', err));
+                
+                browser.runtime.sendMessage({
+                    messageType: MessageType.modeChanged,
+                    mode: BrowsingMode.LOOKUP,
+                    tabId: null
+                }).catch(err => console.log('[Background] Could not notify mode change:', err));
+            }
+        } catch (err) {
+            console.error('[Background] Error handling tab activation:', err);
         }
     });
 
@@ -571,6 +585,33 @@ export default defineBackground(() => {
                 }
             }).catch(err => console.log('[Background] Error loading tree:', err));
             
+            return true;
+        } else if (message.messageType === 'getCurrentTree') {
+            // Sidepanel is requesting the current tree state
+            console.log('[Background] Sidepanel requesting current tree');
+            
+            // Get the active tab and send its tree
+            if (activeTabId && tabSessions.has(activeTabId)) {
+                const session = tabSessions.get(activeTabId)!;
+                browser.runtime.sendMessage({
+                    messageType: MessageType.switchToTabTree,
+                    tabId: activeTabId,
+                    nodes: session.treeNodes,
+                    activeNodeId: session.activeNodeId,
+                    sessionId: session.sessionId,
+                    sessionName: session.originalTreeName || ''
+                }).catch(err => console.log('[Background] Could not send current tree:', err));
+            } else {
+                // No active tree, send empty
+                browser.runtime.sendMessage({
+                    messageType: MessageType.switchToTabTree,
+                    tabId: null,
+                    nodes: [],
+                    activeNodeId: null,
+                    sessionId: null,
+                    sessionName: ''
+                }).catch(err => console.log('[Background] Could not send empty tree:', err));
+            }
             return true;
         }
     });
