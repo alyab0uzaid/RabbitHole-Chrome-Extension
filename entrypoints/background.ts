@@ -338,7 +338,21 @@ export default defineBackground(() => {
                 console.log('[Background] Tab', tabId, 'Wikipedia navigation detected');
                 const articleTitle = getWikipediaArticleTitle(newUrl);
                 if (articleTitle) {
-                    addTreeNode(tabId, articleTitle, newUrl);
+                    // Check if this article already exists in the tree
+                    const existingNode = session.treeNodes.find(node => node.title === articleTitle);
+                    if (existingNode) {
+                        // Just update active node, don't add duplicate
+                        console.log('[Background] Navigating to existing node in tree:', articleTitle);
+                        session.activeNodeId = existingNode.id;
+                        // Update sidepanel and minimap
+                        if (tabId === activeTabId) {
+                            updateSidepanelForTab(tabId);
+                        }
+                        updateMinimapForTab(tabId);
+                    } else {
+                        // New article, add to tree
+                        addTreeNode(tabId, articleTitle, newUrl);
+                    }
                 }
                 session.currentUrl = newUrl;
             }
