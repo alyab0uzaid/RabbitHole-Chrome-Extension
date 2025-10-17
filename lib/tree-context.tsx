@@ -146,6 +146,31 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
         setActiveNodeId(tabActiveNodeId || null);
         setCurrentSessionId(tabSessionId || null);
         setCurrentSessionName(tabSessionName || '');
+      } else if (message.messageType === 'autoSaveCurrentTree') {
+        // Auto-save the current tree before loading a new one
+        console.log('[TreeContext] Auto-saving tree:', message.treeName);
+        const treeId = message.sessionId || `tree-${Date.now()}`;
+        
+        // Check if this tree already exists
+        const existingTree = savedTrees.find(t => t.id === treeId);
+        
+        if (existingTree) {
+          // Update existing tree
+          setSavedTrees(prev => prev.map(tree =>
+            tree.id === treeId
+              ? { ...tree, name: message.treeName, nodes: message.treeNodes, createdAt: Date.now() }
+              : tree
+          ));
+        } else {
+          // Create new saved tree
+          const newTree: SavedTree = {
+            id: treeId,
+            name: message.treeName,
+            nodes: message.treeNodes,
+            createdAt: Date.now()
+          };
+          setSavedTrees(prev => [...prev, newTree]);
+        }
       }
     };
 
@@ -321,67 +346,26 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
     const tree = savedTrees.find(t => t.id === treeId);
     if (tree) {
       console.log('[TreeContext] Loading saved tree:', tree.name, 'with', tree.nodes.length, 'nodes');
-      setIsLoadedFromSave(true);
-      setNodes(tree.nodes);
-      setCurrentSessionName(tree.name); // Load the name
-
+      
       // Find the last visited node (the one with the latest timestamp)
       const lastVisitedNode = tree.nodes.reduce((latest, node) => {
         return !latest || node.timestamp > latest.timestamp ? node : latest;
       }, tree.nodes[0]);
 
-      // Set active to the last visited node
-      setActiveNodeId(lastVisitedNode?.id || null);
-
-      // Mark this as a loaded/view-only session, not a live tracking session
-      // This prevents the background script from thinking it's a live session
-      setCurrentSessionId(`loaded-${tree.id}`);
-
-      // Tell background script this is a loaded tree with the initial article
+      // Tell background script to load this tree
       browser.runtime.sendMessage({
-        messageType: 'setLoadedTreeInfo',
-        originalTreeId: tree.id,
-        originalTreeName: tree.name,
-        initialArticleTitle: lastVisitedNode?.title
+        messageType: 'loadTreeIntoCurrentTab',
+        treeId: tree.id,
+        treeNodes: tree.nodes,
+        treeName: tree.name,
+        lastVisitedNodeUrl: lastVisitedNode?.url,
+        lastVisitedNodeId: lastVisitedNode?.id
       }).catch(err => console.log('[TreeContext] Could not notify background:', err));
-
-      // Clear the tree from background storage to prevent save prompt if user just closes without changes
-      browser.storage.local.set({
-        rabbithole_current_session: {
-          nodes: [],
-          activeNodeId: null,
-          sessionId: null
-        }
-      }).then(() => {
-        console.log('[TreeContext] Cleared background tracking for loaded tree');
-      });
-
-      // Navigate to the last visited node
-      if (lastVisitedNode) {
-        console.log('[TreeContext] Navigating to last visited node:', lastVisitedNode.title);
-
-        // Check if current tab is Wikipedia - if so, reuse it; otherwise create new tab
-        browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
-          const currentTab = tabs[0];
-          if (currentTab?.url?.includes('wikipedia.org')) {
-            // Reuse current Wikipedia tab
-            console.log('[TreeContext] Reusing current Wikipedia tab');
-            browser.tabs.update(currentTab.id!, { url: lastVisitedNode.url });
-          } else {
-            // Create new tab
-            console.log('[TreeContext] Creating new tab for Wikipedia');
-            browser.tabs.create({ url: lastVisitedNode.url, active: true });
-          }
-        });
-      }
 
       // Call the callback to switch sidebar to tree view
       if (onLoadCallback) {
         onLoadCallback();
       }
-
-      // Reset the flag after a brief delay to allow UI to update
-      setTimeout(() => setIsLoadedFromSave(false), 1000);
     }
   }, [savedTrees]);
 

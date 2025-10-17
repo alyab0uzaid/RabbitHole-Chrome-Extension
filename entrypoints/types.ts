@@ -47,12 +47,18 @@ class ExtMessage {
     originalTreeId?: string;
     originalTreeName?: string;
     initialArticleTitle?: string;
+    // Load tree properties
+    treeNodes?: Array<any>;
+    treeName?: string;
+    treeId?: string;
+    lastVisitedNodeUrl?: string;
+    lastVisitedNodeId?: string;
 
-    constructor(messageType: MessageType) {
+    constructor(messageType: MessageType | string) {
         this.messageType = messageType;
     }
 
-    messageType: MessageType;
+    messageType: MessageType | string;
 }
 
 export default ExtMessage;
