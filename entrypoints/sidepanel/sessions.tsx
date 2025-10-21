@@ -232,7 +232,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="p-6 pb-4">
-        <h1 className="text-2xl font-bold text-foreground">History</h1>
+        <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Montaga, serif' }}>History</h1>
       </div>
       {/* Saved Sessions List */}
       <div className="flex-1 overflow-y-auto px-6">

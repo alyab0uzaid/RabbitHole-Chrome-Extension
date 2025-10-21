@@ -4,7 +4,7 @@ import { BrowsingMode } from '@/lib/mode-manager';
 import TreeView from '@/components/tree/TreeView';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Network, FolderOpen, BookOpen } from 'lucide-react';
+import { Network, FolderOpen, BookOpen, Globe } from 'lucide-react';
 import { browser } from 'wxt/browser';
 import { MessageType } from '@/entrypoints/types';
 
@@ -82,8 +82,9 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
             browser.tabs.create({ url: 'https://en.wikipedia.org/wiki/Main_Page' });
           }}
           size="lg"
-          className="w-full max-w-sm"
+          className="w-full max-w-sm bg-gradient-to-b from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground border-0"
         >
+          <Globe className="w-4 h-4 mr-2" />
           Browse Wikipedia
         </Button>
       </div>

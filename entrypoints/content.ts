@@ -200,7 +200,7 @@ export default defineContentScript({
                     const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
                     
                     const isActive = node.id === activeNodeId;
-                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'rgba(100,200,255,0.6)' : 'rgba(255,255,255,0.2)'}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
+                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'hsl(var(--primary) / 0.6)' : 'hsl(var(--muted-foreground) / 0.2)'}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                 }
             });
 
@@ -213,11 +213,11 @@ export default defineContentScript({
                     
                     let fillColor;
                     if (isActive) {
-                        fillColor = 'rgb(100,200,255)'; // Solid blue for active node
+                        fillColor = 'hsl(var(--primary))'; // Primary color for active node
                     } else if (isRoot) {
-                        fillColor = 'rgb(255,255,255)'; // Solid white for root
+                        fillColor = 'hsl(var(--card))'; // Card background for root
                     } else {
-                        fillColor = 'rgb(200,200,200)'; // Solid grey for others
+                        fillColor = 'hsl(var(--muted))'; // Muted color for others
                     }
                     
                     const radius = 6; // Circle radius
@@ -404,7 +404,7 @@ export default defineContentScript({
             const highlightElement = document.createElement('span');
             highlightElement.className = 'rabbithole-highlight';
             highlightElement.style.cursor = 'pointer';
-            highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
+            highlightElement.style.backgroundColor = 'hsl(var(--primary) / 0.3)';
             highlightElement.style.borderRadius = '2px';
             highlightElement.style.padding = '0 2px';
             highlightElement.style.transition = 'background-color 0.2s ease';
@@ -424,12 +424,12 @@ export default defineContentScript({
                 
                 // Add hover event listeners
                 highlightElement.addEventListener('mouseenter', (e) => {
-                    highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.5)';
+                    highlightElement.style.backgroundColor = 'hsl(var(--primary) / 0.5)';
                     showPreviewCard(selectedText, highlightElement);
                 });
                 
                 highlightElement.addEventListener('mouseleave', (e) => {
-                    highlightElement.style.backgroundColor = 'rgba(100, 200, 255, 0.3)';
+                    highlightElement.style.backgroundColor = 'hsl(var(--primary) / 0.3)';
                     // Check if mouse is moving to tooltip
                     const relatedTarget = e.relatedTarget as Node;
                     if (previewCard && previewCard.contains(relatedTarget)) {
@@ -550,10 +550,10 @@ export default defineContentScript({
                 transform: 'scale(0.95)',
                 transition: 'opacity 0.2s ease-out, transform 0.2s ease-out',
                 cursor: 'pointer',
-                background: '#ffffff',
-                border: '1px solid #ebecf0',
+                background: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
                 borderRadius: '6px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                boxShadow: '0 2px 8px hsl(var(--foreground) / 0.15)',
                 overflow: 'hidden'
             });
 
@@ -564,7 +564,7 @@ export default defineContentScript({
                     width: '100%',
                     height: '192px',
                     overflow: 'hidden',
-                    background: '#eaecf0'
+                    background: 'hsl(var(--muted))'
                 });
                 const img = imageTop.querySelector('img') as HTMLImageElement;
                 if (img) {
@@ -593,7 +593,7 @@ export default defineContentScript({
                     height: '100%',
                     overflow: 'hidden',
                     flexShrink: '0',
-                    background: '#eaecf0'
+                    background: 'hsl(var(--muted))'
                 });
                 const img = imageLeft.querySelector('img') as HTMLImageElement;
                 if (img) {
@@ -625,7 +625,7 @@ export default defineContentScript({
                     fontSize: '18px',
                     fontWeight: '600',
                     lineHeight: '1.3',
-                    color: '#202122',
+                    color: 'hsl(var(--foreground))',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
@@ -641,7 +641,7 @@ export default defineContentScript({
                     margin: '0 0 12px 0',
                     fontSize: '14px',
                     lineHeight: '1.5',
-                    color: '#54595d',
+                    color: 'hsl(var(--muted-foreground))',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
@@ -666,7 +666,7 @@ export default defineContentScript({
             if (source) {
                 Object.assign(source.style, {
                     fontSize: '12px',
-                    color: '#72777d',
+                    color: 'hsl(var(--muted-foreground))',
                     fontWeight: '500'
                 });
             }

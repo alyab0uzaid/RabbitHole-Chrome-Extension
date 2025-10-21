@@ -25,7 +25,7 @@ const Sidebar = (
         <div className="flex items-center justify-between px-6 py-4 bg-background">
             {/* Left: Branding */}
             <div className="flex items-center">
-                <span className="text-lg font-semibold text-gray-700 dark:text-gray-300" style={{ fontFamily: 'Montaga, serif' }}>RabbitHole</span>
+                <span className="text-lg font-semibold text-foreground" style={{ fontFamily: 'Montaga, serif' }}>RabbitHole</span>
             </div>
 
             {/* Center: Navigation */}
@@ -40,8 +40,8 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9",
                                     activeSidebarType === SidebarType.home 
-                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                 )}
                             >
                                 <Home className="w-4 h-4" />
@@ -63,8 +63,8 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9",
                                     activeSidebarType === SidebarType.sessions 
-                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                 )}
                             >
                                 <History className="w-4 h-4" />
@@ -86,8 +86,8 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9",
                                     activeSidebarType === SidebarType.settings 
-                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
+                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                                 )}
                             >
                                 <Settings className="w-4 h-4" />

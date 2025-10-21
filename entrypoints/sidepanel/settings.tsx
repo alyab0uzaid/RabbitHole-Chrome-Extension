@@ -26,7 +26,7 @@ export function SettingsPage() {
     return (
         <div className="h-full flex flex-col">
             <div className="p-6 pb-4">
-                <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+                <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Montaga, serif' }}>Settings</h1>
             </div>
             
             <div className="flex-1 px-6 pb-6">
