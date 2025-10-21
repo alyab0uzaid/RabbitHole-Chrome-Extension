@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Play, Calendar, FileText, Network, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   AlertDialog,
@@ -177,6 +178,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const [treeToDeleteName, setTreeToDeleteName] = useState<string>('');
   const [sortBy, setSortBy] = useState<'date' | 'nodes' | 'rootNode'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedTrees, setSelectedTrees] = useState<Set<string>>(new Set());
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isBulkDelete, setIsBulkDelete] = useState(false);
+  const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
+  const [bulkDeleteNames, setBulkDeleteNames] = useState<string[]>([]);
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -194,6 +200,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     console.log('[Sessions] Delete clicked for:', treeName);
     setTreeToDelete(treeId);
     setTreeToDeleteName(treeName);
+    setIsBulkDelete(false);
     setDeleteDialogOpen(true);
     console.log('[Sessions] Dialog state set to true');
   };
@@ -214,6 +221,57 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     } else {
       setSortBy(column);
       setSortOrder(column === 'rootNode' ? 'asc' : 'desc');
+    }
+  };
+
+  const handleSelectTree = (treeId: string, checked: boolean) => {
+    setSelectedTrees(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(treeId);
+      } else {
+        newSet.delete(treeId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedTrees(new Set(sortedTrees.map(tree => tree.id)));
+    } else {
+      setSelectedTrees(new Set());
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedTrees.size === 0) return;
+    
+    setIsBulkDelete(true);
+    setBulkDeleteCount(selectedTrees.size);
+    
+    // Get the names of selected trees
+    const selectedTreeNames = sortedTrees
+      .filter(tree => selectedTrees.has(tree.id))
+      .map(tree => tree.name);
+    setBulkDeleteNames(selectedTreeNames);
+    
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteSelected = () => {
+    selectedTrees.forEach(treeId => {
+      deleteSavedTree(treeId);
+    });
+    setSelectedTrees(new Set());
+    setDeleteDialogOpen(false);
+  };
+
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    if (isEditMode) {
+      // Clear selections when exiting edit mode
+      setSelectedTrees(new Set());
     }
   };
 
@@ -250,9 +308,59 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </div>
         ) : (
           <div className="p-1 pb-6">
+            {/* Action Bar - Fixed height to prevent layout shifts */}
+            <div className="flex items-center justify-between mb-4 h-10">
+              {isEditMode ? (
+                <div className="flex items-center justify-between w-full">
+                  <div></div> {/* Empty space to push buttons to right */}
+                  <div className="flex items-center gap-2">
+                    {selectedTrees.size > 0 && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteSelected}
+                        className="flex items-center gap-2 animate-in fade-in-0 duration-200"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Selected
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={toggleEditMode}
+                      className="animate-in fade-in-0 duration-200"
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between w-full">
+                  <div></div> {/* Empty space to push button to right */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleEditMode}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              )}
+            </div>
+            
             <div className="bg-muted/50 rounded-lg overflow-hidden shadow-sm">
               {/* Table Header */}
-              <div className="grid grid-cols-[2fr_2fr_1fr] gap-4 px-4 py-3 bg-muted/80 border-b border-border">
+              <div className={`grid gap-4 px-4 py-3 bg-muted/80 border-b border-border ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}>
+                {isEditMode && (
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={selectedTrees.size === sortedTrees.length && sortedTrees.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      className="animate-in fade-in-0 duration-200"
+                    />
+                  </div>
+                )}
                 <button 
                   onClick={() => handleSort('date')}
                   className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
@@ -290,10 +398,21 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 {sortedTrees.map((tree) => (
                   <div 
                     key={tree.id}
-                    className="grid grid-cols-[2fr_2fr_1fr] gap-4 px-4 py-3 hover:bg-accent cursor-pointer transition-colors"
-                    onClick={() => handleLoadSession(tree.id)}
+                    className={`grid gap-4 px-4 py-3 hover:bg-accent transition-colors ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}
                   >
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    {isEditMode && (
+                      <div className="flex items-center animate-in fade-in-0 duration-200">
+                        <Checkbox
+                          checked={selectedTrees.has(tree.id)}
+                          onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    )}
+                    <div 
+                      className="flex items-center text-sm text-muted-foreground cursor-pointer"
+                      onClick={() => handleLoadSession(tree.id)}
+                    >
                       <span className="break-words">
                         {new Date(tree.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -304,10 +423,16 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         }).replace(',', ' at')}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm font-medium text-foreground truncate">
+                    <div 
+                      className="flex items-center text-sm font-medium text-foreground truncate cursor-pointer"
+                      onClick={() => handleLoadSession(tree.id)}
+                    >
                       {tree.nodes[0]?.title || 'Unknown'}
                     </div>
-                    <div className="flex items-center justify-end text-sm text-muted-foreground">
+                    <div 
+                      className="flex items-center justify-end text-sm text-muted-foreground cursor-pointer"
+                      onClick={() => handleLoadSession(tree.id)}
+                    >
                       {tree.nodes.length}
                     </div>
                   </div>
@@ -324,14 +449,32 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
-              This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+              {isBulkDelete ? (
+                <>
+                  {bulkDeleteCount === 1 ? (
+                    <>
+                      This will permanently delete <span className="font-semibold text-foreground">"{bulkDeleteNames[0]}"</span>.
+                      This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+                    </>
+                  ) : (
+                    <>
+                      This will permanently delete <span className="font-semibold text-foreground">{bulkDeleteCount} selected rabbit holes</span>.
+                      This action cannot be undone and you'll lose all your exploration history for these rabbit holes.
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
+                  This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={confirmDelete}
+              onClick={isBulkDelete ? confirmDeleteSelected : confirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
