@@ -25,13 +25,43 @@ export default defineContentScript({
                 width: '200px',
                 height: '150px',
                 zIndex: '999999',
-                pointerEvents: 'none',
+                pointerEvents: 'auto',
                 borderRadius: '8px',
                 background: 'rgba(0, 0, 0, 0.5)',
                 backdropFilter: 'blur(10px)',
                 border: '2px solid rgba(255, 255, 255, 0.7)',
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.4)',
-                transition: 'opacity 0.3s ease, background-color 0.3s ease, border-color 0.3s ease'
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+            });
+
+            // Add hover effect
+            trackingIndicator.addEventListener('mouseenter', () => {
+                if (trackingIndicator) {
+                    trackingIndicator.style.transform = 'scale(1.05)';
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.65)';
+                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                }
+            });
+
+            trackingIndicator.addEventListener('mouseleave', () => {
+                if (trackingIndicator) {
+                    trackingIndicator.style.transform = 'scale(1)';
+                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.5)';
+                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                }
+            });
+
+            // Add click handler to open side panel
+            trackingIndicator.addEventListener('click', () => {
+                console.log('[Content] Minimap clicked, opening side panel');
+                // Open the side panel
+                browser.runtime.sendMessage({
+                    messageType: 'openSidePanel',
+                    selectedText: '' // No selected text when clicking minimap
+                }).catch((error) => {
+                    console.error('[Content] Failed to send openSidePanel message:', error);
+                });
             });
 
             document.body.appendChild(trackingIndicator);
