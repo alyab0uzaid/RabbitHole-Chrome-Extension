@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Trash2, Play, Calendar, FileText } from 'lucide-react';
+import { Trash2, Play, Calendar, FileText, Network, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -175,6 +175,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [treeToDelete, setTreeToDelete] = useState<string | null>(null);
   const [treeToDeleteName, setTreeToDeleteName] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'date' | 'nodes' | 'rootNode'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -206,10 +208,31 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     }
   };
 
+  const handleSort = (column: 'date' | 'nodes' | 'rootNode') => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder(column === 'rootNode' ? 'asc' : 'desc');
+    }
+  };
+
+  const sortedTrees = [...savedTrees].sort((a, b) => {
+    if (sortBy === 'date') {
+      return sortOrder === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+    } else if (sortBy === 'nodes') {
+      return sortOrder === 'desc' ? b.nodes.length - a.nodes.length : a.nodes.length - b.nodes.length;
+    } else {
+      const aTitle = a.nodes[0]?.title || '';
+      const bTitle = b.nodes[0]?.title || '';
+      return sortOrder === 'asc' ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
+    }
+  });
+
   return (
     <div className="h-full flex flex-col">
       <div className="p-6 pb-4">
-        <h1 className="text-2xl font-bold text-foreground">Rabbit Holes</h1>
+        <h1 className="text-2xl font-bold text-foreground">History</h1>
       </div>
       {/* Saved Sessions List */}
       <div className="flex-1 overflow-y-auto px-6">
@@ -226,54 +249,71 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 p-1 pb-6">
-            {savedTrees.map((tree) => (
-              <Card key={tree.id} className="overflow-hidden hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-                <div className="flex">
-                  {/* Tree Minimap - Left Side */}
-                  <div className="flex-shrink-0">
-                    <TreeMinimap nodes={tree.nodes} />
-                  </div>
-                  
-                  {/* Card Content - Right Side */}
-                  <div className="flex-1 p-4 flex flex-col justify-between">
-                    <div className="mb-3">
-                      <h4 className="font-semibold text-base mb-1 truncate">{tree.name}</h4>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          {tree.nodes.length} {tree.nodes.length === 1 ? 'node' : 'nodes'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(tree.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+          <div className="p-1 pb-6">
+            <div className="bg-muted/50 rounded-lg overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-3 gap-4 px-4 py-3 bg-muted/80 border-b border-border">
+                <button 
+                  onClick={() => handleSort('date')}
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Date
+                  {sortBy === 'date' && (
+                    sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => handleSort('rootNode')}
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Root
+                  {sortBy === 'rootNode' && (
+                    sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => handleSort('nodes')}
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                >
+                  <Network className="h-4 w-4" />
+                  Nodes
+                  {sortBy === 'nodes' && (
+                    sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
+              
+              {/* Table Rows */}
+              <div className="divide-y divide-border">
+                {sortedTrees.map((tree) => (
+                  <div 
+                    key={tree.id}
+                    className="grid grid-cols-3 gap-4 px-4 py-3 hover:bg-accent cursor-pointer transition-colors"
+                    onClick={() => handleLoadSession(tree.id)}
+                  >
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <span className="break-words">
+                        {new Date(tree.createdAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }).replace(',', ' at')}
+                      </span>
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleLoadSession(tree.id)}
-                        size="sm"
-                        className="flex-1 gap-1"
-                      >
-                        <Play className="h-3 w-3" />
-                        Dive In
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteSession(tree.id, tree.name)}
-                        size="sm"
-                        variant="outline"
-                        className="gap-1 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
+                    <div className="flex items-center text-sm font-medium text-foreground truncate">
+                      {tree.nodes[0]?.title || 'Unknown'}
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      {tree.nodes.length}
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

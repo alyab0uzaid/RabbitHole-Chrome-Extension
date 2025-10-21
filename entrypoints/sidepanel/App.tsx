@@ -75,7 +75,7 @@ function AppContent() {
     return (
         <div className={theme}>
             {<div
-                className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl">
+                className="fixed top-0 right-0 h-screen w-full bg-background z-[1000000000000] rounded-l-xl shadow-2xl flex flex-col">
                 <Sidebar
                     currentMode={currentMode}
                     activeSidebarType={sidebarType}
@@ -83,7 +83,7 @@ function AppContent() {
                         setSidebarType(sidebarType);
                     }}
                 />
-                <main className="mr-14 h-screen p-4">
+                <main className="flex-1 overflow-auto">
                     {sidebarType === SidebarType.home && (
                         <div className="h-full">
                             <AdaptiveHome 

@@ -40,6 +40,9 @@ module.exports = {
             },
         },
         extend: {
+            fontFamily: {
+                sans: ['Cabin', 'system-ui', 'sans-serif'],
+            },
             fontSize: {
                 base: '16px',
             },

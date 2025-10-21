@@ -1,10 +1,12 @@
 import React, {useState} from "react";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
+import {Button} from "@/components/ui/button";
 import {IoMdCloseCircle} from "react-icons/io";
 import {IoIosSettings} from "react-icons/io";
 import {RiDashboardFill} from "react-icons/ri";
-import {BookOpen, Network, FolderOpen} from "lucide-react";
+import {BookOpen, Network, FolderOpen, X, Home, Folder, Settings, History} from "lucide-react";
 import {BrowsingMode} from "@/lib/mode-manager.ts";
+import {cn} from "@/lib/utils";
 
 export enum SidebarType {
     'home' = 'home',
@@ -20,76 +22,97 @@ const Sidebar = (
         activeSidebarType: SidebarType
     }) => {
     return (
-        <aside
-            className="absolute inset-y-0 right-0 z-10 flex w-14 flex-col border-r bg-background border-l-[1px]">
-            {closeContent && <a
-                className="hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors hover:text-foreground ml-auto mr-auto"
-                href="#" onClick={() => {
-                closeContent()
-            }}
-            >
-                <IoMdCloseCircle className="h-4 w-4 transition-all group-hover:scale-110"/>
-                <span className="sr-only">close sidebar</span>
-            </a>
-            }
-            <nav className="flex flex-col items-center gap-4 px-2 py-5">
-                <TooltipProvider>
+        <div className="flex items-center justify-between px-6 py-4 bg-background">
+            {/* Left: Branding */}
+            <div className="flex items-center">
+                <span className="text-lg font-semibold text-gray-700 dark:text-gray-300" style={{ fontFamily: 'Montaga, serif' }}>RabbitHole</span>
+            </div>
+
+            {/* Center: Navigation */}
+            <nav className="flex items-center gap-1">
+                <TooltipProvider delayDuration={200}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.home ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
-                                href="#" onClick={() => {
-                                sideNav(SidebarType.home)
-                            }}
+                            <Button
+                                onClick={() => sideNav(SidebarType.home)}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "h-9 w-9",
+                                    activeSidebarType === SidebarType.home 
+                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
+                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                )}
                             >
-                                <RiDashboardFill
-                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
-                                <span className="sr-only">home</span>
-                            </a>
+                                <Home className="w-4 h-4" />
+                            </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="right">home</TooltipContent>
+                        <TooltipContent>
+                            <p>Home</p>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
 
+                <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={() => sideNav(SidebarType.sessions)}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "h-9 w-9",
+                                    activeSidebarType === SidebarType.sessions 
+                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
+                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                )}
+                            >
+                                <History className="w-4 h-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>History</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
 
-                <TooltipProvider>
+                <TooltipProvider delayDuration={200}>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.sessions ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""}`}
-                                href="#" onClick={() => {
-                                sideNav(SidebarType.sessions)
-                            }}
+                            <Button
+                                onClick={() => sideNav(SidebarType.settings)}
+                                variant="ghost"
+                                size="icon"
+                                className={cn(
+                                    "h-9 w-9",
+                                    activeSidebarType === SidebarType.settings 
+                                        ? "bg-blue-100 text-blue-600 hover:bg-blue-100 hover:text-blue-600" 
+                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                                )}
                             >
-                                <FolderOpen
-                                    className={`h-4 w-4 transition-all group-hover:scale-110`}/>
-                                <span className="sr-only">Rabbit Holes</span>
-                            </a>
+                                <Settings className="w-4 h-4" />
+                            </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="right">Rabbit Holes</TooltipContent>
+                        <TooltipContent>
+                            <p>Settings</p>
+                        </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             </nav>
-            <nav className="mt-auto flex flex-col items-center gap-4 px-2 py-5">
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <a
-                                className={`hover:cursor-pointer flex h-9 w-9 items-center justify-center  text-muted-foreground transition-colors ${activeSidebarType == SidebarType.settings ? "rounded-full bg-primary text-lg font-semibold text-primary-foreground" : ""} `}
-                                href="#" onClick={() => {
-                                sideNav(SidebarType.settings)
-                            }}
-                            >
-                                <IoIosSettings
-                                    className={`h-5 w-5`}/>
-                                <span className="sr-only">Settings</span>
-                            </a>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">Settings</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            </nav>
-        </aside>);
+
+            {/* Right: Close button */}
+            {closeContent && (
+                <Button
+                    onClick={closeContent}
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                >
+                    <X className="w-4 h-4" />
+                </Button>
+            )}
+        </div>
+    );
 };
 
 export default Sidebar;

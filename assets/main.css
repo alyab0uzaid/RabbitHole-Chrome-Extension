@@ -58,5 +58,11 @@
 
     body {
         @apply bg-background text-foreground;
+        font-family: 'Cabin', system-ui, sans-serif;
+    }
+    
+    /* Ensure Cabin font is applied to all text elements */
+    h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select {
+        font-family: 'Cabin', system-ui, sans-serif;
     }
 }
