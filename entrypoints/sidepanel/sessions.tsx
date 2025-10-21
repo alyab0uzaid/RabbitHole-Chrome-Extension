@@ -250,9 +250,9 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </div>
         ) : (
           <div className="p-1 pb-6">
-            <div className="bg-muted/50 rounded-lg overflow-hidden">
+            <div className="bg-muted/50 rounded-lg overflow-hidden shadow-sm">
               {/* Table Header */}
-              <div className="grid grid-cols-3 gap-4 px-4 py-3 bg-muted/80 border-b border-border">
+              <div className="grid grid-cols-[2fr_2fr_1fr] gap-4 px-4 py-3 bg-muted/80 border-b border-border">
                 <button 
                   onClick={() => handleSort('date')}
                   className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
@@ -275,7 +275,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </button>
                 <button 
                   onClick={() => handleSort('nodes')}
-                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                  className="flex items-center justify-end gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
                 >
                   <Network className="h-4 w-4" />
                   Nodes
@@ -290,7 +290,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 {sortedTrees.map((tree) => (
                   <div 
                     key={tree.id}
-                    className="grid grid-cols-3 gap-4 px-4 py-3 hover:bg-accent cursor-pointer transition-colors"
+                    className="grid grid-cols-[2fr_2fr_1fr] gap-4 px-4 py-3 hover:bg-accent cursor-pointer transition-colors"
                     onClick={() => handleLoadSession(tree.id)}
                   >
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -307,7 +307,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <div className="flex items-center text-sm font-medium text-foreground truncate">
                       {tree.nodes[0]?.title || 'Unknown'}
                     </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
+                    <div className="flex items-center justify-end text-sm text-muted-foreground">
                       {tree.nodes.length}
                     </div>
                   </div>

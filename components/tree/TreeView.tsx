@@ -14,6 +14,7 @@ import { useTree } from '@/lib/tree-context';
 import { WikiTreeNode, SourceContextType } from '@/lib/tree-types';
 import WikiNode, { WikiNodeData } from './WikiNode';
 import type { NodeTypes } from '@xyflow/react';
+import { Network } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
@@ -175,31 +176,15 @@ interface TreeViewProps {
 
 export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const { nodes: treeNodes, activeNodeId, setActiveNode, currentSessionName, setCurrentSessionName } = useTree();
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleInputValue, setTitleInputValue] = useState('');
+  // Removed title editing functionality
   const reactFlowInstance = useRef<any>(null);
+  
+  // Get the root node name for display
+  const rootNodeName = treeNodes.find(node => node.parentId === null)?.title || 'Untitled Session';
 
   console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
 
-  const handleTitleClick = useCallback(() => {
-    setTitleInputValue(currentSessionName);
-    setIsEditingTitle(true);
-  }, [currentSessionName]);
-
-  const handleTitleBlur = useCallback(() => {
-    if (titleInputValue.trim()) {
-      setCurrentSessionName(titleInputValue.trim());
-    }
-    setIsEditingTitle(false);
-  }, [titleInputValue, setCurrentSessionName]);
-
-  const handleTitleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      setIsEditingTitle(false);
-    }
-  }, []);
+  // Removed title editing functions
 
   // Compute nodes and edges from tree data
   const { nodes: flowNodes, edges: flowEdges } = useMemo(
@@ -215,7 +200,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
         reactFlowInstance.current.fitView({
           nodes: [{ id: activeNodeId }],
           duration: 500,
-          padding: 0.2
+          padding: 0.6
         });
       }
     }
@@ -226,7 +211,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
     if (reactFlowInstance.current?.fitView && flowNodes.length > 0) {
       reactFlowInstance.current.fitView({
         duration: 300,
-        padding: 0.1
+        padding: 0.8
       });
     }
   }, [flowNodes.length]);
@@ -237,7 +222,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
       if (reactFlowInstance.current?.fitView) {
         reactFlowInstance.current.fitView({
           duration: 200,
-          padding: 0.1
+          padding: 0.8
         });
       }
     };
@@ -277,36 +262,22 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Title Panel at the top */}
-      <div className="bg-background/95 backdrop-blur-sm p-4 border-b">
-        <div className="flex flex-col gap-2">
-          {isEditingTitle ? (
-            <input
-              type="text"
-              value={titleInputValue}
-              onChange={(e) => setTitleInputValue(e.target.value)}
-              onBlur={handleTitleBlur}
-              onKeyDown={handleTitleKeyDown}
-              autoFocus
-              className="text-xl font-bold bg-transparent border-none outline-none focus:outline-none px-0 w-full"
-            />
-          ) : (
-            <h1
-              onClick={handleTitleClick}
-              className="text-xl font-bold cursor-pointer hover:bg-muted/50 px-2 -ml-2 rounded transition-colors"
-              title="Click to edit"
-            >
-              {currentSessionName || 'Untitled Session'}
+      {/* Clean Header */}
+      <div className="px-6 py-4 border-b border-border bg-background">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold">
+              {rootNodeName}
             </h1>
-          )}
-          <div className="text-sm text-muted-foreground">
-            {treeNodes.length} {treeNodes.length === 1 ? 'article' : 'articles'}
+            <div className="text-xs text-muted-foreground">
+              {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
+            </div>
           </div>
         </div>
       </div>
       
       {/* Tree View */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <ReactFlow
           ref={reactFlowInstance}
           nodes={flowNodes}
@@ -326,18 +297,21 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
           }}
           onInit={(instance) => {
             reactFlowInstance.current = instance;
-            // Initial fit view
+            // Initial fit view with much more padding to zoom out significantly
             setTimeout(() => {
               if (instance.fitView) {
                 instance.fitView({
                   duration: 300,
-                  padding: 0.1
+                  padding: 0.8
                 });
               }
             }, 100);
           }}
         >
-          <Controls className="!border-border !bg-background/80 backdrop-blur-sm !shadow-sm [&_button]:!border-border [&_button]:!bg-background/80 [&_button]:hover:!bg-muted/50" />
+          <Controls 
+            position="bottom-left"
+            className="!border-border !bg-background/90 backdrop-blur-sm !shadow-lg [&_button]:!border-border [&_button]:!bg-background/90 [&_button]:hover:!bg-muted/50 [&_button]:!text-foreground" 
+          />
         </ReactFlow>
       </div>
     </div>
