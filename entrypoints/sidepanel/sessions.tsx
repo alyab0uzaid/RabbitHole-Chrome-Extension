@@ -3,7 +3,8 @@ import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, Play, Calendar, FileText, Network, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trash2, Play, Calendar, FileText, Network, MapPin, ChevronUp, ChevronDown, Search } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -183,6 +184,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const [isBulkDelete, setIsBulkDelete] = useState(false);
   const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
   const [bulkDeleteNames, setBulkDeleteNames] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -238,7 +240,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedTrees(new Set(sortedTrees.map(tree => tree.id)));
+      setSelectedTrees(new Set(filteredAndSortedTrees.map(tree => tree.id)));
     } else {
       setSelectedTrees(new Set());
     }
@@ -251,7 +253,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     setBulkDeleteCount(selectedTrees.size);
     
     // Get the names of selected trees
-    const selectedTreeNames = sortedTrees
+    const selectedTreeNames = filteredAndSortedTrees
       .filter(tree => selectedTrees.has(tree.id))
       .map(tree => tree.name);
     setBulkDeleteNames(selectedTreeNames);
@@ -275,17 +277,24 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     }
   };
 
-  const sortedTrees = [...savedTrees].sort((a, b) => {
-    if (sortBy === 'date') {
-      return sortOrder === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
-    } else if (sortBy === 'nodes') {
-      return sortOrder === 'desc' ? b.nodes.length - a.nodes.length : a.nodes.length - b.nodes.length;
-    } else {
-      const aTitle = a.nodes[0]?.title || '';
-      const bTitle = b.nodes[0]?.title || '';
-      return sortOrder === 'asc' ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
-    }
-  });
+  const filteredAndSortedTrees = [...savedTrees]
+    .filter(tree => {
+      if (!searchQuery) return true;
+      const searchLower = searchQuery.toLowerCase();
+      return tree.name.toLowerCase().includes(searchLower) || 
+             tree.nodes[0]?.title?.toLowerCase().includes(searchLower);
+    })
+    .sort((a, b) => {
+      if (sortBy === 'date') {
+        return sortOrder === 'desc' ? b.createdAt - a.createdAt : a.createdAt - b.createdAt;
+      } else if (sortBy === 'nodes') {
+        return sortOrder === 'desc' ? b.nodes.length - a.nodes.length : a.nodes.length - b.nodes.length;
+      } else {
+        const aTitle = a.nodes[0]?.title || '';
+        const bTitle = b.nodes[0]?.title || '';
+        return sortOrder === 'asc' ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
+      }
+    });
 
   return (
     <div className="h-full flex flex-col">
@@ -337,7 +346,16 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </div>
               ) : (
                 <div className="flex items-center justify-between w-full">
-                  <div></div> {/* Empty space to push button to right */}
+                  {/* Search Bar - Left aligned */}
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder="Search trees..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
@@ -354,11 +372,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
               <div className={`grid gap-4 px-4 py-3 bg-muted/80 border-b border-border ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}>
                 {isEditMode && (
                   <div className="flex items-center">
-                    <Checkbox
-                      checked={selectedTrees.size === sortedTrees.length && sortedTrees.length > 0}
-                      onCheckedChange={handleSelectAll}
-                      className="animate-in fade-in-0 duration-200"
-                    />
+                <Checkbox
+                  checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
+                  onCheckedChange={handleSelectAll}
+                  className="animate-in fade-in-0 duration-200"
+                />
                   </div>
                 )}
                 <button 
@@ -395,7 +413,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
               
               {/* Table Rows */}
               <div className="divide-y divide-border">
-                {sortedTrees.map((tree) => (
+                {filteredAndSortedTrees.map((tree) => (
                   <div 
                     key={tree.id}
                     className={`grid gap-4 px-4 py-3 hover:bg-accent transition-colors ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}
