@@ -38,10 +38,10 @@ const Sidebar = (
                                 variant="ghost"
                                 size="icon"
                                 className={cn(
-                                    "h-9 w-9",
+                                    "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.home 
                                         ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
                                 <Home className="w-4 h-4" />
@@ -61,10 +61,10 @@ const Sidebar = (
                                 variant="ghost"
                                 size="icon"
                                 className={cn(
-                                    "h-9 w-9",
+                                    "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.sessions 
                                         ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
                                 <History className="w-4 h-4" />
@@ -84,10 +84,10 @@ const Sidebar = (
                                 variant="ghost"
                                 size="icon"
                                 className={cn(
-                                    "h-9 w-9",
+                                    "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.settings 
                                         ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
-                                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
                                 <Settings className="w-4 h-4" />

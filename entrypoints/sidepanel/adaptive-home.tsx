@@ -79,7 +79,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
             browser.tabs.create({ url: 'https://en.wikipedia.org/wiki/Main_Page' });
           }}
           size="lg"
-          className="w-full max-w-sm bg-gradient-to-b from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-primary-foreground border-0"
+          className="w-full max-w-sm bg-gradient-to-b from-primary to-primary/90 hover:brightness-110 text-primary-foreground border-0 shadow-md hover:shadow-xl transition-all duration-300"
         >
           <Globe className="w-4 h-4 mr-2" />
           Browse Wikipedia
