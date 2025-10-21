@@ -249,9 +249,9 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-2">No Active Research Session</h3>
           <p className="text-sm">
-            Highlight text on any page and click the preview card to start exploring Wikipedia.
+            Browse Wikipedia to start your exploration journey.
             <br />
-            Your journey will be tracked automatically.
+            Every article you visit will be tracked automatically.
           </p>
         </div>
       </div>
