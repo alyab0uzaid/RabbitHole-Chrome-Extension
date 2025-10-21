@@ -47,16 +47,13 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
             console.log('[AdaptiveHome] Tree node clicked, navigating to:', nodeData.url);
 
             // Ask background script to navigate to this URL in the tracked Wikipedia tab
-            try {
-              await browser.runtime.sendMessage({
-                messageType: MessageType.navigateToWikipedia,
-                articleUrl: nodeData.url
-              });
-            } catch (error) {
-              console.error('[AdaptiveHome] Failed to navigate Wikipedia tab:', error);
-              // Fallback: create new tab
-              await browser.tabs.create({ url: nodeData.url, active: true });
-            }
+            // Don't use await here as we want fire-and-forget behavior
+            browser.runtime.sendMessage({
+              messageType: MessageType.navigateToWikipedia,
+              articleUrl: nodeData.url
+            }).catch((error) => {
+              console.error('[AdaptiveHome] Failed to send navigation message:', error);
+            });
           }}
         />
       </div>

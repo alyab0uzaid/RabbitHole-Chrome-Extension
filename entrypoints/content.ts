@@ -200,7 +200,12 @@ export default defineContentScript({
                     const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
                     
                     const isActive = node.id === activeNodeId;
-                    svgContent += `<path d="${pathData}" fill="none" stroke="${isActive ? 'hsl(var(--primary) / 0.6)' : 'hsl(var(--muted-foreground) / 0.2)'}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
+                    // Use actual color values since CSS variables don't work in SVG strings
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const strokeColor = isActive 
+                        ? (isDark ? 'rgba(56, 189, 248, 0.6)' : 'rgba(14, 165, 233, 0.6)')
+                        : (isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)');
+                    svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                 }
             });
 
@@ -211,13 +216,15 @@ export default defineContentScript({
                     const isActive = node.id === activeNodeId;
                     const isRoot = node.parentId === null;
                     
+                    // Use actual color values since CSS variables don't work in SVG strings
+                    const isDark = document.documentElement.classList.contains('dark');
                     let fillColor;
                     if (isActive) {
-                        fillColor = 'hsl(var(--primary))'; // Primary color for active node
+                        fillColor = isDark ? 'rgb(56, 189, 248)' : 'rgb(14, 165, 233)'; // Primary blue
                     } else if (isRoot) {
-                        fillColor = 'hsl(var(--card))'; // Card background for root
+                        fillColor = isDark ? 'rgb(30, 41, 59)' : 'rgb(255, 255, 255)'; // Card background
                     } else {
-                        fillColor = 'hsl(var(--muted))'; // Muted color for others
+                        fillColor = isDark ? 'rgb(51, 65, 85)' : 'rgb(241, 245, 249)'; // Muted
                     }
                     
                     const radius = 6; // Circle radius
@@ -367,6 +374,17 @@ export default defineContentScript({
             
             // Ignore if clicking inside the card
             if (previewCard && previewCard.contains(e.target as Node)) {
+                return;
+            }
+            
+            // Ignore if selection is inside an input field or editable element
+            const target = e.target as HTMLElement;
+            if (target && (
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                target.closest('input, textarea, [contenteditable="true"]')
+            )) {
                 return;
             }
             

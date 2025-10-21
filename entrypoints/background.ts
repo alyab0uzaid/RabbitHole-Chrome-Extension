@@ -30,7 +30,7 @@ export default defineBackground(() => {
 
     // Store session state per tab - each tab has its own independent tree
     const tabSessions: Map<number, TrackingState> = new Map();
-    
+
     // Current active tab state (for sidepanel display)
     let activeTabId: number | null = null;
 
@@ -549,23 +549,17 @@ export default defineBackground(() => {
                 browser.tabs.update(activeTabId, { 
                     url: message.articleUrl,
                     active: true 
-                }).then(() => {
-                    sendResponse({ success: true });
                 }).catch((error) => {
                     console.error('[Background] Error navigating tab:', error);
-                    sendResponse({ success: false, error: error.message });
                 });
             } else {
                 // No active tracked tab, create new one
                 console.log('[Background] No active tracked tab, creating new Wikipedia tab');
-                browser.tabs.create({ url: message.articleUrl, active: true }).then(() => {
-                    sendResponse({ success: true });
-                }).catch((error) => {
+                browser.tabs.create({ url: message.articleUrl, active: true }).catch((error) => {
                     console.error('[Background] Error creating tab:', error);
-                    sendResponse({ success: false, error: error.message });
                 });
             }
-            return true; // Keep message channel open for async response
+            // Don't return true or send response - fire and forget
         } else if (message.messageType === 'loadTreeIntoCurrentTab') {
             // Load a saved tree into the current tab
             console.log('[Background] Loading tree into current tab:', message.treeName);
