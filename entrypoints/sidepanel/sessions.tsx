@@ -335,6 +335,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                   variant="outline"
                   size="sm"
                   onClick={toggleEditMode}
+                  className="bg-transparent border-border shadow-sm hover:bg-[#e8e6dc] hover:shadow-lg transition-all duration-200"
                 >
                   Edit
                 </Button>
@@ -357,26 +358,28 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                   variant="outline"
                   size="sm"
                   onClick={toggleEditMode}
+                  className="bg-transparent border-border shadow-sm hover:bg-[#e8e6dc] hover:shadow-lg transition-all duration-200"
                 >
                   Done
                 </Button>
               </div>
             </div>
             
-            <div className="bg-muted/50 rounded-lg overflow-hidden shadow-sm">
+            <div className="rounded-lg overflow-hidden shadow-sm border border-[#dad9d4]">
               {/* Table Header */}
-              <div className={`grid gap-4 px-4 py-3 bg-muted/80 border-b border-border ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}>
+              <div className={`grid gap-4 px-4 py-3 bg-[#ede9de] border-b border-[#dad9d4] ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}>
                 {isEditMode && (
                   <div className="flex items-center animate-in fade-in-0 duration-200">
                     <Checkbox
                       checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
                       onCheckedChange={handleSelectAll}
+                      className="border-[#dad9d4]"
                     />
                   </div>
                 )}
                 <button 
                   onClick={() => handleSort('date')}
-                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
                 >
                   <Calendar className="h-4 w-4" />
                   Date
@@ -386,7 +389,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </button>
                 <button 
                   onClick={() => handleSort('rootNode')}
-                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                  className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
                 >
                   <MapPin className="h-4 w-4" />
                   Root
@@ -396,7 +399,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </button>
                 <button 
                   onClick={() => handleSort('nodes')}
-                  className="flex items-center justify-end gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                  className="flex items-center justify-end gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
                 >
                   <Network className="h-4 w-4" />
                   Nodes
@@ -407,11 +410,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
               </div>
               
               {/* Table Rows */}
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-[#dad9d4]">
                 {filteredAndSortedTrees.map((tree) => (
                   <div 
                     key={tree.id}
-                    className={`grid gap-4 px-4 py-3 hover:bg-accent transition-colors ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}
+                    className={`grid gap-4 px-4 py-3 hover:bg-[#f3f1e9] transition-colors ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}
                   >
                     {isEditMode && (
                       <div className="flex items-center animate-in fade-in-0 duration-200">
@@ -419,6 +422,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                           checked={selectedTrees.has(tree.id)}
                           onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
                           onClick={(e) => e.stopPropagation()}
+                          className="border-[#dad9d4]"
                         />
                       </div>
                     )}
