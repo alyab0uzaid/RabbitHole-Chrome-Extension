@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit } from 'lucide-react';
+import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, Star, StarOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AlertDialog,
@@ -16,7 +16,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Component to render a tree minimap using the same layout algorithm as the main tree
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
@@ -341,8 +346,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 >
                   Edit
                 </Button>
-              </div>
-              
+                  </div>
+                  
               {/* Edit Mode - Always present but animated */}
               <div className={`absolute right-0 flex items-center gap-2 transition-all duration-200 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'}`}>
                 {selectedTrees.size > 0 && (
@@ -364,15 +369,15 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 >
                   Done
                 </Button>
-              </div>
-            </div>
-            
-            <div className="rounded-lg overflow-hidden shadow-sm border border-[#dad9d4]">
+                      </div>
+                    </div>
+
+            <div className="rounded-lg shadow-sm border border-[#dad9d4] overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-[#ede9de] hover:bg-[#ede9de]">
                     {isEditMode && (
-                      <TableHead className="w-12">
+                      <TableHead className="w-10 !h-auto py-2 px-2">
                         <Checkbox
                           checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
                           onCheckedChange={handleSelectAll}
@@ -380,7 +385,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         />
                       </TableHead>
                     )}
-                    <TableHead className="!h-auto py-2">
+                    <TableHead className={`!h-auto py-2 ${isEditMode ? 'pl-2' : ''}`}>
                       <button 
                         onClick={() => handleSort('date')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
@@ -402,7 +407,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         )}
                       </button>
                     </TableHead>
-                    <TableHead className="text-right !h-auto py-2">
+                    <TableHead className="text-right !h-auto py-2 pr-2">
                       <button 
                         onClick={() => handleSort('nodes')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors ml-auto"
@@ -415,72 +420,112 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         Nodes
                       </button>
                     </TableHead>
-                    <TableHead className="w-12 !h-auto py-2"></TableHead>
+                    <TableHead className="w-10 !h-auto py-2 px-2"></TableHead>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAndSortedTrees.map((tree) => (
-                    <TableRow key={tree.id} className="hover:bg-[#f3f1e9]">
-                      {isEditMode && (
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedTrees.has(tree.id)}
-                            onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="border-[#dad9d4]"
-                          />
-                        </TableCell>
-                      )}
-                      <TableCell 
-                        className="cursor-pointer py-2"
-                        onClick={() => handleLoadSession(tree.id)}
-                      >
-                        <span className="break-words text-sm text-muted-foreground">
-                          {new Date(tree.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }).replace(',', ' at')}
-                        </span>
-                      </TableCell>
-                      <TableCell 
-                        className="cursor-pointer py-2"
-                        onClick={() => handleLoadSession(tree.id)}
-                      >
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {tree.nodes[0]?.title || 'Unknown'}
-                        </span>
-                      </TableCell>
-                      <TableCell 
-                        className="text-right cursor-pointer py-2"
-                        onClick={() => handleLoadSession(tree.id)}
-                      >
-                        <span className="text-sm text-muted-foreground">
-                          {tree.nodes.length}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-2">
+                 </TableHeader>
+                 <TableBody>
+                   {filteredAndSortedTrees.length > 0 ? (
+                     filteredAndSortedTrees.map((tree) => (
+                       <TableRow key={tree.id} className="hover:bg-[#f3f1e9]">
+                         {isEditMode && (
+                           <TableCell className="py-2 px-2">
+                             <Checkbox
+                               checked={selectedTrees.has(tree.id)}
+                               onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
+                               onClick={(e) => e.stopPropagation()}
+                               className="border-[#dad9d4]"
+                             />
+                           </TableCell>
+                         )}
+                         <TableCell 
+                           className={`cursor-pointer py-2 ${isEditMode ? 'pl-2' : ''}`}
+                           onClick={() => handleLoadSession(tree.id)}
+                         >
+                           <span className="break-words text-sm text-muted-foreground">
+                             {new Date(tree.createdAt).toLocaleDateString('en-US', {
+                               year: 'numeric',
+                               month: '2-digit',
+                               day: '2-digit',
+                               hour: '2-digit',
+                               minute: '2-digit'
+                             }).replace(',', ' at')}
+                           </span>
+                         </TableCell>
+                         <TableCell 
+                           className="cursor-pointer py-2"
+                           onClick={() => handleLoadSession(tree.id)}
+                         >
+                           <span className="text-sm font-medium text-foreground truncate">
+                             {tree.nodes[0]?.title || 'Unknown'}
+                           </span>
+                         </TableCell>
+                         <TableCell 
+                           className="text-right cursor-pointer py-2 pr-2"
+                           onClick={() => handleLoadSession(tree.id)}
+                         >
+                           <span className="text-sm text-muted-foreground">
+                             {tree.nodes.length}
+                           </span>
+                         </TableCell>
+                      <TableCell className="py-2 px-2" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-[#ede9de]">
+                            <Button 
+                              variant="ghost" 
+                              className="h-8 w-8 p-0 text-[#83827c] hover:text-foreground hover:bg-[#ede9de]"
+                            >
+                              <span className="sr-only">Open menu</span>
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Rename clicked', tree.id);
+                              }}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
-                              Edit Name
+                              <span>Rename</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Star clicked', tree.id);
+                              }}
+                            >
+                              <Star className="mr-2 h-4 w-4" />
+                              <span>Star</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSession(tree.id, tree.nodes[0]?.title || 'Unknown');
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                       </TableRow>
+                     ))
+                   ) : (
+                     <TableRow>
+                       <TableCell 
+                         colSpan={isEditMode ? 5 : 4} 
+                         className="h-24 text-center"
+                       >
+                         <div className="text-muted-foreground">
+                           No results found.
+                    </div>
+                       </TableCell>
+                     </TableRow>
+                   )}
+                 </TableBody>
               </Table>
-            </div>
+                </div>
           </div>
         )}
       </div>
@@ -507,8 +552,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </>
               ) : (
                 <>
-                  This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
-                  This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+              This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
+              This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
                 </>
               )}
             </AlertDialogDescription>
