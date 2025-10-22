@@ -318,53 +318,49 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
         ) : (
           <div className="p-1 pb-6">
             {/* Action Bar - Fixed height to prevent layout shifts */}
-            <div className="flex items-center justify-between mb-4 h-10">
-              {isEditMode ? (
-                <div className="flex items-center justify-between w-full">
-                  <div></div> {/* Empty space to push buttons to right */}
-                  <div className="flex items-center gap-2">
-                    {selectedTrees.size > 0 && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleDeleteSelected}
-                        className="flex items-center gap-2 animate-in fade-in-0 duration-200"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Selected
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleEditMode}
-                      className="animate-in fade-in-0 duration-200"
-                    >
-                      Done
-                    </Button>
-                  </div>
+            <div className="flex items-center justify-between mb-4 h-10 relative">
+              {/* View Mode - Always present but animated */}
+              <div className={`flex items-center gap-4 w-full transition-all duration-200 ${isEditMode ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'}`}>
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search trees..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              ) : (
-                <div className="flex items-center justify-between w-full">
-                  {/* Search Bar - Left aligned */}
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Search trees..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleEditMode}
+                >
+                  Edit
+                </Button>
+              </div>
+              
+              {/* Edit Mode - Always present but animated */}
+              <div className={`absolute right-0 flex items-center gap-2 transition-all duration-200 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'}`}>
+                {selectedTrees.size > 0 && (
                   <Button
-                    variant="outline"
+                    variant="destructive"
                     size="sm"
-                    onClick={toggleEditMode}
+                    onClick={handleDeleteSelected}
+                    className="flex items-center gap-2"
                   >
-                    Edit
+                    <Trash2 className="h-4 w-4" />
+                    Delete Selected
                   </Button>
-                </div>
-              )}
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleEditMode}
+                >
+                  Done
+                </Button>
+              </div>
             </div>
             
             <div className="bg-muted/50 rounded-lg overflow-hidden shadow-sm">
