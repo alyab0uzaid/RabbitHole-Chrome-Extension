@@ -243,8 +243,8 @@ export default defineContentScript({
                         const isDark = document.documentElement.classList.contains('skin-theme-clientpref-night') || 
                                       document.body.classList.contains('skin-theme-clientpref-night');
                         const strokeColor = isActive 
-                            ? (isDark ? 'rgba(56, 189, 248, 0.6)' : 'rgba(14, 165, 233, 0.6)')
-                            : (isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)');
+                            ? (isDark ? 'rgba(89, 162, 217, 0.6)' : 'rgba(89, 162, 217, 0.6)')
+                            : (isDark ? 'rgba(195, 192, 182, 0.2)' : 'rgba(61, 57, 41, 0.2)');
                         svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                     }
                 }
@@ -262,11 +262,11 @@ export default defineContentScript({
                                   document.body.classList.contains('skin-theme-clientpref-night');
                     let fillColor;
                     if (isActive) {
-                        fillColor = isDark ? 'rgb(56, 189, 248)' : 'rgb(14, 165, 233)'; // Primary blue
+                        fillColor = isDark ? 'rgb(89, 162, 217)' : 'rgb(89, 162, 217)'; // Primary blue
                     } else if (isRoot) {
-                        fillColor = isDark ? 'rgb(30, 41, 59)' : 'rgb(255, 255, 255)'; // Card background
+                        fillColor = isDark ? 'rgb(38, 38, 36)' : 'rgb(250, 249, 245)'; // Card background
                     } else {
-                        fillColor = isDark ? 'rgb(51, 65, 85)' : 'rgb(241, 245, 249)'; // Muted
+                        fillColor = isDark ? 'rgb(27, 27, 25)' : 'rgb(237, 233, 222)'; // Muted
                     }
                     
                     const radius = 6; // Circle radius

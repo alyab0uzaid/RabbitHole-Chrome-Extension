@@ -336,42 +336,48 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                   </div>
                   
              {/* Results count and Select link */}
-             <div className="flex items-center gap-2 mb-4 relative">
-             {/* Normal state - fades out to left */}
-             <div className={`flex items-center gap-2 transition-all duration-300 ${isEditMode ? 'opacity-0 -translate-x-4 pointer-events-none' : 'opacity-100 translate-x-0'}`}>
-               <div className="text-sm text-text-muted">
-                 {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'tree' : 'trees'}
-               </div>
-               <button
-                 onClick={toggleEditMode}
-                 className="text-sm text-primary underline hover:no-underline"
-               >
-                 Select
-               </button>
-             </div>
-             
-             {/* Edit controls - fades in from right in same position */}
-             <div className={`absolute left-0 flex items-center gap-4 transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
-               <span className="text-sm text-text-muted">
-                 <span className="inline-block w-4 text-right font-mono text-base font-medium">{selectedTrees.size}</span> selected
-                        </span>
-               <button
-                 onClick={handleDeleteSelected}
-                 className={`transition-colors ${selectedTrees.size > 0 ? 'text-text-dark hover:text-destructive' : 'text-text-light'}`}
-               >
-                 <Trash2 className="h-4 w-4" />
-               </button>
-               </div>
-               
-               {/* X button - fades in from right */}
-               <div className={`absolute right-0 flex items-center transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+             <div className="flex items-center mb-4 relative">
+             {/* Normal state - slides in from left */}
+             {!isEditMode && (
+               <div className="flex items-center gap-2 animate-in slide-in-from-left-4 duration-300">
+                 <div className="text-sm text-text-muted">
+                   {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'tree' : 'trees'}
+                 </div>
                  <button
                    onClick={toggleEditMode}
-                   className="text-text-muted hover:text-foreground transition-colors"
+                   className="text-sm text-primary underline hover:no-underline"
                  >
-                   <X className="h-4 w-4" />
+                   Select
                  </button>
-                      </div>
+               </div>
+             )}
+             
+             {/* Edit controls - slides in from right */}
+             {isEditMode && (
+               <div className="flex items-center gap-4 animate-in slide-in-from-right-4 duration-300">
+                 <span className="text-sm text-text-muted">
+                   <span className="inline-block w-4 text-right font-mono text-base font-medium">{selectedTrees.size}</span> selected
+                 </span>
+                 <button
+                   onClick={handleDeleteSelected}
+                   className={`transition-colors ${selectedTrees.size > 0 ? 'text-text-dark hover:text-destructive' : 'text-text-light'}`}
+                 >
+                   <Trash2 className="h-4 w-4" />
+                 </button>
+               </div>
+             )}
+               
+               {/* X button - appears/disappears instantly */}
+               {isEditMode && (
+                 <div className="absolute right-0 flex items-center">
+                   <button
+                     onClick={toggleEditMode}
+                     className="text-text-muted hover:text-foreground transition-colors"
+                   >
+                     <X className="h-4 w-4" />
+                   </button>
+                 </div>
+               )}
                     </div>
 
             <div className="rounded-lg shadow-sm border border-border overflow-x-auto">

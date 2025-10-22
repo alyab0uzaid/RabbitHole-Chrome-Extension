@@ -40,7 +40,7 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.home 
-                                        ? "bg-[#598ad9]/10 text-[#598ad9] hover:bg-[#598ad9]/10 hover:text-[#598ad9]" 
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
                                         : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
@@ -63,7 +63,7 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.sessions 
-                                        ? "bg-[#598ad9]/10 text-[#598ad9] hover:bg-[#598ad9]/10 hover:text-[#598ad9]" 
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
                                         : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
@@ -86,7 +86,7 @@ const Sidebar = (
                                 className={cn(
                                     "h-9 w-9 transition-all duration-300",
                                     activeSidebarType === SidebarType.settings 
-                                        ? "bg-[#598ad9]/10 text-[#598ad9] hover:bg-[#598ad9]/10 hover:text-[#598ad9]" 
+                                        ? "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary" 
                                         : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
