@@ -85,7 +85,7 @@ function AppContent() {
                 />
                 <main className="flex-1 overflow-auto">
                     {sidebarType === SidebarType.home && (
-                        <div className="h-full">
+                        <div className="h-full animate-in fade-in-0 duration-700">
                             <AdaptiveHome 
                                 currentMode={currentMode}
                                 onNavigateToSessions={() => {
@@ -95,7 +95,7 @@ function AppContent() {
                         </div>
                     )}
                     {sidebarType === SidebarType.sessions && (
-                        <div className="h-full">
+                        <div className="h-full animate-in fade-in-0 duration-700">
                             <SessionsPage
                                 onSwitchToTree={() => {
                                     setSidebarType(SidebarType.home);
@@ -104,7 +104,7 @@ function AppContent() {
                         </div>
                     )}
                     {sidebarType === SidebarType.settings && (
-                        <div className="h-full">
+                        <div className="h-full animate-in fade-in-0 duration-700">
                             <SettingsPage/>
                         </div>
                     )}

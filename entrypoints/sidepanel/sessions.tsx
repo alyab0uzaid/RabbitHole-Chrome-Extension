@@ -367,12 +367,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
               {/* Table Header */}
               <div className={`grid gap-4 px-4 py-3 bg-muted/80 border-b border-border ${isEditMode ? 'grid-cols-[auto_2fr_2fr_1fr]' : 'grid-cols-[2fr_2fr_1fr]'}`}>
                 {isEditMode && (
-                  <div className="flex items-center">
-                <Checkbox
-                  checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
-                  onCheckedChange={handleSelectAll}
-                  className="animate-in fade-in-0 duration-200"
-                />
+                  <div className="flex items-center animate-in fade-in-0 duration-200">
+                    <Checkbox
+                      checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
                   </div>
                 )}
                 <button 
