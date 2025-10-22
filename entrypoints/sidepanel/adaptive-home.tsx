@@ -35,11 +35,11 @@ interface AdaptiveHomeProps {
 }
 
 export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHomeProps) {
-  const { treeNodes, savedTrees } = useTree();
+  const { nodes, savedTrees } = useTree();
   
 
   // Show tree if actively tracking or has nodes
-  if (currentMode === BrowsingMode.TRACKING || (treeNodes && treeNodes.length > 0)) {
+  if (currentMode === BrowsingMode.TRACKING || (nodes && nodes.length > 0)) {
     return (
       <div className="flex flex-col h-full">
         <TreeView 
