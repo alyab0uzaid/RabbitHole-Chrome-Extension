@@ -380,7 +380,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         />
                       </TableHead>
                     )}
-                    <TableHead>
+                    <TableHead className="!h-auto py-2">
                       <button 
                         onClick={() => handleSort('date')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
@@ -391,7 +391,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         )}
                       </button>
                     </TableHead>
-                    <TableHead>
+                    <TableHead className="!h-auto py-2">
                       <button 
                         onClick={() => handleSort('rootNode')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
@@ -402,7 +402,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         )}
                       </button>
                     </TableHead>
-                    <TableHead className="text-right">
+                    <TableHead className="text-right !h-auto py-2">
                       <button 
                         onClick={() => handleSort('nodes')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors ml-auto"
@@ -415,7 +415,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         Nodes
                       </button>
                     </TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-12 !h-auto py-2"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -432,7 +432,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         </TableCell>
                       )}
                       <TableCell 
-                        className="cursor-pointer"
+                        className="cursor-pointer py-2"
                         onClick={() => handleLoadSession(tree.id)}
                       >
                         <span className="break-words text-sm text-muted-foreground">
@@ -446,7 +446,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         </span>
                       </TableCell>
                       <TableCell 
-                        className="cursor-pointer"
+                        className="cursor-pointer py-2"
                         onClick={() => handleLoadSession(tree.id)}
                       >
                         <span className="text-sm font-medium text-foreground truncate">
@@ -454,14 +454,14 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         </span>
                       </TableCell>
                       <TableCell 
-                        className="text-right cursor-pointer"
+                        className="text-right cursor-pointer py-2"
                         onClick={() => handleLoadSession(tree.id)}
                       >
                         <span className="text-sm text-muted-foreground">
                           {tree.nodes.length}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="py-2">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-[#ede9de]">
