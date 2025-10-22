@@ -367,9 +367,9 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                </div>
              )}
                
-               {/* X button - appears/disappears instantly */}
+               {/* X button - slides in from left when entering, disappears instantly when exiting */}
                {isEditMode && (
-                 <div className="absolute right-0 flex items-center">
+                 <div className="absolute right-0 flex items-center animate-in slide-in-from-left-4 duration-300">
                    <button
                      onClick={toggleEditMode}
                      className="text-text-muted hover:text-foreground transition-colors"
