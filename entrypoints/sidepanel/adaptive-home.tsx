@@ -103,10 +103,13 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
           
           {savedTrees && savedTrees.length > 0 ? (
             <div className="space-y-3">
-              {savedTrees.slice(0, 4).map((session) => (
+              {savedTrees
+                .sort((a, b) => b.createdAt - a.createdAt)
+                .slice(0, 4)
+                .map((session) => (
                 <div 
                   key={session.id}
-                  className="bg-card border border-border rounded-lg p-4 hover:bg-accent cursor-pointer transition-colors shadow-sm"
+                  className="border border-border rounded-lg p-4 hover:bg-white dark:hover:bg-white/10 cursor-pointer transition-all duration-200 shadow-sm hover:shadow-lg"
                   onClick={() => {
                     browser.runtime.sendMessage({
                       messageType: 'loadTreeIntoCurrentTab',
@@ -143,7 +146,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
                 No recent rabbit holes yet
               </div>
               <div className="text-xs text-muted-foreground">
-                Start exploring to create your first tree
+                Start exploring to create your first
               </div>
             </div>
           )}
