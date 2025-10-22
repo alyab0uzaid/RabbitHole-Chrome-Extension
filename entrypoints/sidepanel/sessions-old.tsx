@@ -4,8 +4,29 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit } from 'lucide-react';
+import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreHorizontal, Edit } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+  VisibilityState,
+} from "@tanstack/react-table";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +38,150 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+export type SavedTree = {
+  id: string;
+  name: string;
+  nodes: any[];
+  createdAt: number;
+}
+
+export const columns: ColumnDef<SavedTree>[] = [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Date
+          <ChevronUp className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("createdAt"));
+      return (
+        <div className="text-xs sm:text-sm text-muted-foreground">
+          {date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }).replace(',', ' at')}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Root
+          <ChevronUp className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const tree = row.original;
+      return (
+        <div className="text-xs sm:text-sm font-medium text-foreground truncate">
+          {tree.nodes[0]?.title || 'Unknown'}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "nodes",
+    header: () => <div className="text-right">Nodes</div>,
+    cell: ({ row }) => {
+      const tree = row.original;
+      return (
+        <div className="text-right text-xs sm:text-sm text-muted-foreground">
+          {tree.nodes.length}
+        </div>
+      );
+    },
+  },
+  {
+    id: "actions",
+    enableHiding: false,
+    cell: ({ row }) => {
+      const tree = row.original;
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => {
+                // Handle load session
+                console.log('Load session:', tree.id);
+              }}
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Dive In
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                // Handle edit name
+                console.log('Edit name:', tree.id);
+              }}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Name
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                // Handle delete
+                console.log('Delete:', tree.id);
+              }}
+              className="text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
+  },
+];
 
 // Component to render a tree minimap using the same layout algorithm as the main tree
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
@@ -175,29 +340,34 @@ interface SessionsPageProps {
 }
 
 export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
-  const { savedTrees, loadTree, deleteSavedTree } = useTree();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [treeToDelete, setTreeToDelete] = useState<string | null>(null);
-  const [treeToDeleteName, setTreeToDeleteName] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'date' | 'nodes' | 'rootNode'>('date');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [selectedTrees, setSelectedTrees] = useState<Set<string>>(new Set());
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [isBulkDelete, setIsBulkDelete] = useState(false);
-  const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
-  const [bulkDeleteNames, setBulkDeleteNames] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const { savedTrees, loadTree } = useTree();
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = useState({})
 
-  const handleLoadSession = (treeId: string) => {
-    console.log('[Rabbit Holes] Loading tree:', treeId);
+  const table = useReactTable({
+    data: savedTrees,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
 
-    // Load the tree and switch to tree view
-    loadTree(treeId, () => {
-      console.log('[Rabbit Holes] Switching to tree view');
-      if (onSwitchToTree) {
-        onSwitchToTree();
-      }
-    });
+  const handleLoadSession = (sessionId: string) => {
+    loadTree(sessionId);
+    onSwitchToTree();
   };
 
   const handleDeleteSession = (treeId: string, treeName: string) => {
@@ -341,8 +511,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 >
                   Edit
                 </Button>
-              </div>
-              
+                  </div>
+                  
               {/* Edit Mode - Always present but animated */}
               <div className={`absolute right-0 flex items-center gap-2 transition-all duration-200 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'}`}>
                 {selectedTrees.size > 0 && (
@@ -364,9 +534,9 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 >
                   Done
                 </Button>
-              </div>
-            </div>
-            
+                      </div>
+                    </div>
+
             <div className="rounded-lg overflow-hidden shadow-sm border border-[#dad9d4]">
               <Table>
                 <TableHeader>
@@ -381,10 +551,10 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                       </TableHead>
                     )}
                     <TableHead>
-                      <button 
-                        onClick={() => handleSort('date')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
-                      >
+                        <button 
+                          onClick={() => handleSort('date')}
+                          className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
+                        >
                         Date
                         {sortBy === 'date' && (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
@@ -392,10 +562,10 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                       </button>
                     </TableHead>
                     <TableHead>
-                      <button 
-                        onClick={() => handleSort('rootNode')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
-                      >
+                        <button 
+                          onClick={() => handleSort('rootNode')}
+                          className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
+                        >
                         Root
                         {sortBy === 'rootNode' && (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
@@ -403,16 +573,14 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                       </button>
                     </TableHead>
                     <TableHead className="text-right">
-                      <button 
-                        onClick={() => handleSort('nodes')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors ml-auto"
-                      >
-                        {sortBy === 'nodes' ? (
-                          sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
-                        ) : (
-                          <div className="h-3 w-3" />
-                        )}
+                        <button 
+                          onClick={() => handleSort('nodes')}
+                          className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors ml-auto"
+                        >
                         Nodes
+                        {sortBy === 'nodes' && (
+                          sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
+                        )}
                       </button>
                     </TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -435,7 +603,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         className="cursor-pointer"
                         onClick={() => handleLoadSession(tree.id)}
                       >
-                        <span className="break-words text-sm text-muted-foreground">
+                        <span className="break-words text-xs sm:text-sm text-muted-foreground">
                           {new Date(tree.createdAt).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: '2-digit',
@@ -449,7 +617,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         className="cursor-pointer"
                         onClick={() => handleLoadSession(tree.id)}
                       >
-                        <span className="text-sm font-medium text-foreground truncate">
+                        <span className="text-xs sm:text-sm font-medium text-foreground truncate">
                           {tree.nodes[0]?.title || 'Unknown'}
                         </span>
                       </TableCell>
@@ -457,16 +625,16 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         className="text-right cursor-pointer"
                         onClick={() => handleLoadSession(tree.id)}
                       >
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs sm:text-sm text-muted-foreground">
                           {tree.nodes.length}
                         </span>
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-[#ede9de]">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
+                      </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
@@ -480,7 +648,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+                </div>
           </div>
         )}
       </div>
@@ -507,8 +675,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                 </>
               ) : (
                 <>
-                  This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
-                  This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
+              This will permanently delete <span className="font-semibold text-foreground">"{treeToDeleteName}"</span>.
+              This action cannot be undone and you'll lose all your exploration history for this rabbit hole.
                 </>
               )}
             </AlertDialogDescription>
