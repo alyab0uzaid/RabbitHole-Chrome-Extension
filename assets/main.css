@@ -5,48 +5,68 @@
 
 @layer base {
     :root {
-        --background: 45 20% 98%;
-        --foreground: 60 2% 24%;
-        --card: 0 0% 100%;
-        --card-foreground: 60 2% 24%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 60 2% 24%;
-        --primary: 200 95% 45%;
-        --primary-foreground: 0 0% 100%;
-        --secondary: 220 14.3% 95.9%;
-        --secondary-foreground: 60 2% 24%;
-        --muted: 220 14.3% 95.9%;
-        --muted-foreground: 60 2% 24%;
-        --accent: 220 14.3% 95.9%;
-        --accent-foreground: 60 2% 24%;
-        --destructive: 0 84.2% 60.2%;
+        /* Light mode - based on your color palette */
+        --background: 45 20% 98%; /* #faf9f5 */
+        --foreground: 60 2% 24%; /* #3d3929 */
+        --card: 45 20% 98%; /* #faf9f5 */
+        --card-foreground: 0 0% 8%; /* #141413 */
+        --popover: 0 0% 100%; /* #ffffff */
+        --popover-foreground: 0 0% 1%; /* #030303 */
+        --primary: 200 95% 45%; /* #59a2d9 */
+        --primary-foreground: 0 0% 100%; /* #ffffff */
+        --secondary: 45 15% 90%; /* #e9e6dc */
+        --secondary-foreground: 60 5% 33%; /* #535146 */
+        --muted: 45 15% 90%; /* #ede9de */
+        --muted-foreground: 60 3% 52%; /* #83827d */
+        --accent: 45 15% 90%; /* #e9e6dc */
+        --accent-foreground: 60 5% 15%; /* #28261b */
+        --destructive: 0 65% 55%; /* #cf3a3a */
         --destructive-foreground: 210 20% 98%;
-        --border: 45 8% 85%;
-        --input: 45 8% 85%;
-        --ring: 200 95% 45%;
+        --border: 45 8% 85%; /* #dad9d4 */
+        --input: 45 8% 85%; /* #dad9d4 */
+        --ring: 200 95% 45%; /* #59a2d9 */
         --radius: 0.5rem;
+        
+        /* Custom semantic colors */
+        --table-header: 45 15% 90%; /* #ede9de */
+        --table-hover: 45 20% 95%; /* #f3f1e9 */
+        --button-hover: 45 15% 90%; /* #e8e6dc */
+        --text-muted: 60 3% 52%; /* #83827c */
+        --text-dark: 60 2% 24%; /* #3d3d3a */
+        --text-light: 60 3% 62%; /* #9c9b97 */
+        --border-hover: 60 3% 70%; /* #b4b2a7 */
     }
 
     .dark {
-        --background: 224 71.4% 3%;
-        --foreground: 210 20% 98%;
-        --card: 224 50% 8%;
-        --card-foreground: 210 20% 98%;
-        --popover: 224 50% 8%;
-        --popover-foreground: 210 20% 98%;
-        --primary: 200 90% 50%;
-        --primary-foreground: 0 0% 100%;
-        --secondary: 215 27.9% 16.9%;
-        --secondary-foreground: 210 20% 98%;
-        --muted: 215 27.9% 16.9%;
-        --muted-foreground: 217.9 10.6% 64.9%;
-        --accent: 215 27.9% 16.9%;
-        --accent-foreground: 210 20% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 210 20% 98%;
-        --border: 215 27.9% 16.9%;
-        --input: 215 27.9% 16.9%;
-        --ring: 200 90% 50%;
+        /* Dark mode - based on your exact palette */
+        --background: 60 3% 15%; /* #262624 */
+        --foreground: 45 8% 78%; /* #c3c0b6 */
+        --card: 60 3% 15%; /* #262624 */
+        --card-foreground: 45 20% 98%; /* #faf9f5 */
+        --popover: 60 3% 19%; /* #30302e */
+        --popover-foreground: 60 3% 90%; /* #e5e5e2 */
+        --primary: 200 95% 45%; /* #598ad9 */
+        --primary-foreground: 0 0% 100%; /* #ffffff */
+        --secondary: 45 20% 98%; /* #faf9f5 */
+        --secondary-foreground: 60 3% 19%; /* #30302e */
+        --muted: 60 3% 11%; /* #1b1b19 */
+        --muted-foreground: 45 8% 72%; /* #b7b5a9 */
+        --accent: 60 3% 8%; /* #1a1915 */
+        --accent-foreground: 45 20% 96%; /* #f5f4ee */
+        --destructive: 0 65% 55%; /* #cf3a3a */
+        --destructive-foreground: 210 20% 98%; /* Light text */
+        --border: 60 3% 25%; /* #3e3e38 */
+        --input: 60 3% 32%; /* #52514a */
+        --ring: 200 95% 45%; /* #598ad9 */
+        
+        /* Custom semantic colors for dark mode */
+        --table-header: 60 3% 11%; /* #1b1b19 */
+        --table-hover: 60 3% 18%; /* Slightly lighter than header */
+        --button-hover: 60 3% 20%; /* Dark button hover */
+        --text-muted: 45 8% 72%; /* #b7b5a9 */
+        --text-dark: 45 8% 78%; /* #c3c0b6 */
+        --text-light: 45 8% 85%; /* Lighter warm gray */
+        --border-hover: 60 3% 40%; /* Darker version for dark mode */
     }
 }
 

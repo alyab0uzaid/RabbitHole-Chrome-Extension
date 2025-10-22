@@ -30,7 +30,7 @@ const Sidebar = (
 
             {/* Center: Navigation */}
             <nav className="flex items-center gap-1">
-                <TooltipProvider delayDuration={200}>
+                <TooltipProvider delayDuration={800}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -53,7 +53,7 @@ const Sidebar = (
                     </Tooltip>
                 </TooltipProvider>
 
-                <TooltipProvider delayDuration={200}>
+                <TooltipProvider delayDuration={800}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -76,7 +76,7 @@ const Sidebar = (
                     </Tooltip>
                 </TooltipProvider>
 
-                <TooltipProvider delayDuration={200}>
+                <TooltipProvider delayDuration={800}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button

@@ -81,6 +81,14 @@ module.exports = {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+                // Custom semantic colors
+                "table-header": "hsl(var(--table-header))",
+                "table-hover": "hsl(var(--table-hover))",
+                "button-hover": "hsl(var(--button-hover))",
+                "text-muted": "hsl(var(--text-muted))",
+                "text-dark": "hsl(var(--text-dark))",
+                "text-light": "hsl(var(--text-light))",
+                "border-hover": "hsl(var(--border-hover))",
             },
             borderRadius: {
                 lg: "var(--radius)",

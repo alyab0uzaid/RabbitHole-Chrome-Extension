@@ -331,7 +331,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  placeholder="Search trees..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 className="pl-10"
+                 className="pl-10 hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
                />
                   </div>
                   
@@ -339,12 +339,12 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
              <div className="flex items-center gap-2 mb-4 relative">
              {/* Normal state - fades out to left */}
              <div className={`flex items-center gap-2 transition-all duration-300 ${isEditMode ? 'opacity-0 -translate-x-4 pointer-events-none' : 'opacity-100 translate-x-0'}`}>
-               <div className="text-sm text-[#83827c]">
+               <div className="text-sm text-text-muted">
                  {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'tree' : 'trees'}
                </div>
                <button
                  onClick={toggleEditMode}
-                 className="text-sm text-[#59a2d9] underline hover:no-underline"
+                 className="text-sm text-primary underline hover:no-underline"
                >
                  Select
                </button>
@@ -352,45 +352,45 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
              
              {/* Edit controls - fades in from right in same position */}
              <div className={`absolute left-0 flex items-center gap-4 transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
-               <span className="text-sm text-[#83827c]">
+               <span className="text-sm text-text-muted">
                  <span className="inline-block w-4 text-right font-mono text-base font-medium">{selectedTrees.size}</span> selected
                         </span>
-                 <button
-                   onClick={handleDeleteSelected}
-                   className={`transition-colors ${selectedTrees.size > 0 ? 'text-[#3d3d3a] hover:text-destructive' : 'text-[#9c9b97]'}`}
-                 >
-                   <Trash2 className="h-4 w-4" />
-                 </button>
+               <button
+                 onClick={handleDeleteSelected}
+                 className={`transition-colors ${selectedTrees.size > 0 ? 'text-text-dark hover:text-destructive' : 'text-text-light'}`}
+               >
+                 <Trash2 className="h-4 w-4" />
+               </button>
                </div>
                
                {/* X button - fades in from right */}
                <div className={`absolute right-0 flex items-center transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
                  <button
                    onClick={toggleEditMode}
-                   className="text-[#83827c] hover:text-foreground transition-colors"
+                   className="text-text-muted hover:text-foreground transition-colors"
                  >
                    <X className="h-4 w-4" />
                  </button>
                       </div>
                     </div>
 
-            <div className="rounded-lg shadow-sm border border-[#dad9d4] overflow-x-auto">
+            <div className="rounded-lg shadow-sm border border-border overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-[#ede9de] hover:bg-[#ede9de]">
+                  <TableRow className="bg-table-header hover:bg-table-header">
                     {isEditMode && (
                       <TableHead className="w-10 !h-auto py-2 px-2">
                         <Checkbox
                           checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
                           onCheckedChange={handleSelectAll}
-                          className="border-[#dad9d4]"
+                          className="border-border"
                         />
                       </TableHead>
                     )}
                     <TableHead className={`!h-auto py-2 ${isEditMode ? 'pl-2' : ''}`}>
                       <button 
                         onClick={() => handleSort('date')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
                       >
                         Date
                         {sortBy === 'date' && (
@@ -401,7 +401,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <TableHead className="!h-auto py-2">
                       <button 
                         onClick={() => handleSort('rootNode')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
                       >
                         Root
                         {sortBy === 'rootNode' && (
@@ -412,7 +412,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <TableHead className="text-right !h-auto py-2 pr-2">
                       <button 
                         onClick={() => handleSort('nodes')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors ml-auto"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors ml-auto"
                       >
                         {sortBy === 'nodes' ? (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
@@ -428,14 +428,14 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  <TableBody>
                    {filteredAndSortedTrees.length > 0 ? (
                      filteredAndSortedTrees.map((tree) => (
-                       <TableRow key={tree.id} className="hover:bg-[#f3f1e9]">
+                        <TableRow key={tree.id} className="hover:bg-table-hover">
                          {isEditMode && (
                            <TableCell className="py-2 px-2">
                              <Checkbox
                                checked={selectedTrees.has(tree.id)}
                                onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
                                onClick={(e) => e.stopPropagation()}
-                               className="border-[#dad9d4]"
+                               className="border-border"
                              />
                            </TableCell>
                          )}
@@ -474,7 +474,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="ghost" 
-                              className="h-8 w-8 p-0 text-[#83827c] hover:text-foreground hover:bg-[#ede9de]"
+                              className="h-8 w-8 p-0 text-text-muted hover:text-foreground hover:bg-table-header"
                             >
                               <span className="sr-only">Open menu</span>
                               <MoreVertical className="h-4 w-4" />

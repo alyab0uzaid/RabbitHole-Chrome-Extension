@@ -18,6 +18,7 @@ function AppContent() {
     const [showButton, setShowButton] = useState(false)
     const [showCard, setShowCard] = useState(false)
     const [sidebarType, setSidebarType] = useState<SidebarType>(SidebarType.home);
+    const [isTransitioning, setIsTransitioning] = useState(false);
     const [buttonStyle, setButtonStyle] = useState<any>();
     const [cardStyle, setCardStyle] = useState<any>();
     const [currentMode, setCurrentMode] = useState<BrowsingMode>(BrowsingMode.LOOKUP);
@@ -79,13 +80,21 @@ function AppContent() {
                 <Sidebar
                     currentMode={currentMode}
                     activeSidebarType={sidebarType}
-                    sideNav={(sidebarType: SidebarType) => {
-                        setSidebarType(sidebarType);
+                    sideNav={(newSidebarType: SidebarType) => {
+                        if (newSidebarType !== sidebarType) {
+                            setIsTransitioning(true);
+                            setTimeout(() => {
+                                setSidebarType(newSidebarType);
+                                setTimeout(() => {
+                                    setIsTransitioning(false);
+                                }, 50);
+                            }, 300);
+                        }
                     }}
                 />
                 <main className="flex-1 overflow-auto">
                     {sidebarType === SidebarType.home && (
-                        <div className="h-full animate-in fade-in-0 duration-700">
+                        <div key="home" className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100 animate-in fade-in-0 duration-700'}`}>
                             <AdaptiveHome 
                                 currentMode={currentMode}
                                 onNavigateToSessions={() => {
@@ -95,7 +104,7 @@ function AppContent() {
                         </div>
                     )}
                     {sidebarType === SidebarType.sessions && (
-                        <div className="h-full animate-in fade-in-0 duration-700">
+                        <div key="sessions" className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100 animate-in fade-in-0 duration-700'}`}>
                             <SessionsPage
                                 onSwitchToTree={() => {
                                     setSidebarType(SidebarType.home);
@@ -104,7 +113,7 @@ function AppContent() {
                         </div>
                     )}
                     {sidebarType === SidebarType.settings && (
-                        <div className="h-full animate-in fade-in-0 duration-700">
+                        <div key="settings" className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100 animate-in fade-in-0 duration-700'}`}>
                             <SettingsPage/>
                         </div>
                     )}
