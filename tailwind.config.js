@@ -42,6 +42,7 @@ module.exports = {
         extend: {
             fontFamily: {
                 sans: ['Cabin', 'system-ui', 'sans-serif'],
+                mono: ['Inconsolata', 'ui-monospace', 'SFMono-Regular', 'monospace'],
             },
             fontSize: {
                 base: '16px',

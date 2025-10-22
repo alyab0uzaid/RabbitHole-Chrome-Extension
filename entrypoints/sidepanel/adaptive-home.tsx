@@ -65,7 +65,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
     <div className="flex flex-col h-full">
       {/* Compact welcome section at top */}
       <div className="flex flex-col items-center px-6 py-8 text-center">
-        <div className="w-16 h-16 mx-auto rounded-full bg-[#598ad9] flex items-center justify-center mb-4">
+        <div className="w-16 h-16 mx-auto rounded-full bg-[#59a2d9] flex items-center justify-center mb-4">
           <Network className="w-8 h-8 text-white" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground mb-2">
@@ -79,7 +79,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
             browser.tabs.create({ url: 'https://en.wikipedia.org/wiki/Main_Page' });
           }}
           size="lg"
-          className="w-full max-w-sm bg-gradient-to-b from-[#598ad9] to-[#598ad9]/90 hover:brightness-110 text-white border-0 shadow-md hover:shadow-xl transition-all duration-300"
+          className="w-full max-w-sm bg-gradient-to-b from-[#59a2d9] to-[#59a2d9]/90 hover:brightness-110 text-white border-0 shadow-md hover:shadow-xl transition-all duration-300"
         >
           <Globe className="w-4 h-4 mr-2" />
           Browse Wikipedia
@@ -94,7 +94,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
             {savedTrees && savedTrees.length > 0 && (
               <button 
                 onClick={onNavigateToSessions}
-                className="text-xs text-[#598ad9] hover:underline font-medium"
+                className="text-xs text-[#59a2d9] hover:underline font-medium"
               >
                 View All
               </button>
@@ -128,7 +128,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-[#598ad9]"></div>
+                          <div className="w-2 h-2 rounded-full bg-[#59a2d9]"></div>
                           {session.nodes.length} Nodes
                         </span>
                         <span>

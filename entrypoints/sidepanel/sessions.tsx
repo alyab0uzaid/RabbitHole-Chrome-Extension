@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, Star, StarOff } from 'lucide-react';
+import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, Star, StarOff, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AlertDialog,
@@ -324,51 +324,53 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </div>
         ) : (
           <div className="p-1 pb-6">
-            {/* Action Bar - Fixed height to prevent layout shifts */}
-            <div className="flex items-center justify-between mb-4 h-10 relative">
-              {/* View Mode - Always present but animated */}
-              <div className={`flex items-center gap-4 w-full transition-all duration-200 ${isEditMode ? 'opacity-0 pointer-events-none -translate-x-4' : 'opacity-100 translate-x-0'}`}>
-                {/* Search Bar */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search trees..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleEditMode}
-                  className="bg-transparent border-border shadow-sm hover:bg-[#e8e6dc] hover:shadow-lg transition-all duration-200"
-                >
-                  Edit
-                </Button>
+             {/* Search Bar */}
+             <div className="relative mb-4">
+               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+               <Input
+                 placeholder="Search trees..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="pl-10"
+               />
                   </div>
                   
-              {/* Edit Mode - Always present but animated */}
-              <div className={`absolute right-0 flex items-center gap-2 transition-all duration-200 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 pointer-events-none translate-x-4'}`}>
-                {selectedTrees.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDeleteSelected}
-                    className="flex items-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Delete Selected
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleEditMode}
-                  className="bg-transparent border-border shadow-sm hover:bg-[#e8e6dc] hover:shadow-lg transition-all duration-200"
-                >
-                  Done
-                </Button>
+             {/* Results count and Select link */}
+             <div className="flex items-center gap-2 mb-4 relative">
+             {/* Normal state - fades out to left */}
+             <div className={`flex items-center gap-2 transition-all duration-300 ${isEditMode ? 'opacity-0 -translate-x-4 pointer-events-none' : 'opacity-100 translate-x-0'}`}>
+               <div className="text-sm text-[#83827c]">
+                 {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'tree' : 'trees'}
+               </div>
+               <button
+                 onClick={toggleEditMode}
+                 className="text-sm text-[#59a2d9] underline hover:no-underline"
+               >
+                 Select
+               </button>
+             </div>
+             
+             {/* Edit controls - fades in from right in same position */}
+             <div className={`absolute left-0 flex items-center gap-4 transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+               <span className="text-sm text-[#83827c]">
+                 <span className="inline-block w-4 text-right font-mono text-base font-medium">{selectedTrees.size}</span> selected
+                        </span>
+                 <button
+                   onClick={handleDeleteSelected}
+                   className={`transition-colors ${selectedTrees.size > 0 ? 'text-[#3d3d3a] hover:text-destructive' : 'text-[#9c9b97]'}`}
+                 >
+                   <Trash2 className="h-4 w-4" />
+                 </button>
+               </div>
+               
+               {/* X button - fades in from right */}
+               <div className={`absolute right-0 flex items-center transition-all duration-300 ${isEditMode ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4 pointer-events-none'}`}>
+                 <button
+                   onClick={toggleEditMode}
+                   className="text-[#83827c] hover:text-foreground transition-colors"
+                 >
+                   <X className="h-4 w-4" />
+                 </button>
                       </div>
                     </div>
 
@@ -388,7 +390,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <TableHead className={`!h-auto py-2 ${isEditMode ? 'pl-2' : ''}`}>
                       <button 
                         onClick={() => handleSort('date')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors"
                       >
                         Date
                         {sortBy === 'date' && (
@@ -399,7 +401,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <TableHead className="!h-auto py-2">
                       <button 
                         onClick={() => handleSort('rootNode')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors"
                       >
                         Root
                         {sortBy === 'rootNode' && (
@@ -410,7 +412,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                     <TableHead className="text-right !h-auto py-2 pr-2">
                       <button 
                         onClick={() => handleSort('nodes')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#598ad9] transition-colors ml-auto"
+                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#59a2d9] transition-colors ml-auto"
                       >
                         {sortBy === 'nodes' ? (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
@@ -476,7 +478,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             >
                               <span className="sr-only">Open menu</span>
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
+                      </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem
