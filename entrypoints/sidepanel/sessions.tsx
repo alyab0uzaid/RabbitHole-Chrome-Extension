@@ -318,7 +318,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
               <p className="text-sm">
                 Your explorations will appear here once you start diving down Wikipedia rabbit holes.
                 <br />
-                Build a tree and it will be automatically saved!
+                Build a rabbit hole and it will be automatically saved!
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
              <div className="relative mb-4">
                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                <Input
-                 placeholder="Search trees..."
+                 placeholder="Search rabbit holes..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
                  className="pl-10 hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
@@ -337,11 +337,11 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                   
              {/* Results count and Select link */}
              <div className="flex items-center mb-4 relative">
-             {/* Normal state - slides in from left */}
+             {/* Normal state */}
              {!isEditMode && (
-               <div className="flex items-center gap-2 animate-in slide-in-from-left-4 duration-300">
+               <div className="flex items-center gap-2">
                  <div className="text-sm text-text-muted">
-                   {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'tree' : 'trees'}
+                   {filteredAndSortedTrees.length} {filteredAndSortedTrees.length === 1 ? 'rabbit hole' : 'rabbit holes'}
                  </div>
                  <button
                    onClick={toggleEditMode}

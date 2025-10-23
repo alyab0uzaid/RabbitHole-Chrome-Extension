@@ -72,7 +72,7 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
           Start exploring
         </h1>
         <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-          Browse Wikipedia and watch your journey come to life as an interactive tree showing every article you explore.
+          Browse Wikipedia and watch your journey come to life as an interactive map showing every article you explore.
         </p>
         <Button 
           onClick={() => {

@@ -10,10 +10,10 @@ export interface WikiNodeData extends Record<string, unknown> {
 function WikiNode({ data }: NodeProps<Node<WikiNodeData>>) {
   return (
     <div
-      className={`group px-5 py-3 rounded-xl border bg-card shadow-sm min-w-[160px] max-w-[220px] transition-all duration-200 ${
+      className={`group px-5 py-3 rounded-xl border-2 bg-white shadow-sm min-w-[160px] max-w-[220px] transition-all duration-200 ${
         data.isActive
-          ? 'border-primary/60 shadow-md shadow-primary/10 scale-105'
-          : 'border-border/40 hover:border-primary/40 hover:shadow-md'
+          ? 'border-primary shadow-md shadow-primary/10 scale-105'
+          : 'border-border hover:border-primary/60 hover:shadow-md'
       }`}
     >
       <Handle 
@@ -22,7 +22,7 @@ function WikiNode({ data }: NodeProps<Node<WikiNodeData>>) {
         className="!w-2 !h-2 !border-0 !bg-transparent !opacity-0 group-hover:!opacity-100 group-hover:!bg-primary/50 transition-opacity" 
       />
 
-      <div className={`text-sm font-medium truncate transition-colors ${
+      <div className={`text-base font-medium truncate transition-colors ${
         data.isActive ? 'text-primary' : 'text-foreground'
       }`} title={data.title}>
         {data.title}

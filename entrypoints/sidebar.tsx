@@ -76,7 +76,8 @@ const Sidebar = (
                     </Tooltip>
                 </TooltipProvider>
 
-                <TooltipProvider delayDuration={800}>
+                {/* Settings hidden for now */}
+                {/* <TooltipProvider delayDuration={800}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -97,7 +98,7 @@ const Sidebar = (
                             <p>Settings</p>
                         </TooltipContent>
                     </Tooltip>
-                </TooltipProvider>
+                </TooltipProvider> */}
             </nav>
 
             {/* Right: Close button */}

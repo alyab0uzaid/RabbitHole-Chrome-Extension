@@ -266,10 +266,10 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
       <div className="px-6 py-4 border-b border-border bg-background">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
+            <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
               {rootNodeName}
             </h1>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
             </div>
           </div>
@@ -291,7 +291,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
           defaultEdgeOptions={{
             style: { 
               strokeWidth: 2,
-              stroke: 'hsl(var(--muted-foreground) / 0.2)'
+              stroke: 'hsl(var(--border))'
             },
             animated: false
           }}
