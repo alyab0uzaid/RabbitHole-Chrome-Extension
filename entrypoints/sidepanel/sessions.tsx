@@ -357,7 +357,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                <div className="flex items-center gap-4 animate-in slide-in-from-right-4 duration-300">
                  <span className="text-sm text-text-muted">
                    <span className="inline-block w-4 text-right font-mono text-base font-medium">{selectedTrees.size}</span> selected
-                 </span>
+                        </span>
                  <button
                    onClick={handleDeleteSelected}
                    className={`transition-colors ${selectedTrees.size > 0 ? 'text-text-dark hover:text-destructive' : 'text-text-light'}`}
@@ -376,24 +376,24 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                    >
                      <X className="h-4 w-4" />
                    </button>
-                 </div>
+                      </div>
                )}
                     </div>
 
             <div className="rounded-lg shadow-sm border border-border overflow-x-auto">
-              <Table>
+              <Table style={{tableLayout: 'fixed', width: '100%'}}>
                 <TableHeader>
                   <TableRow className="bg-table-header hover:bg-table-header">
-                    {isEditMode && (
-                      <TableHead className="w-10 !h-auto py-2 px-2">
+                    <TableHead className="!h-auto py-2 overflow-hidden transition-[width,opacity,padding] duration-300 ease-in-out" style={{width: isEditMode ? '1.75rem' : '0', opacity: isEditMode ? 1 : 0, paddingLeft: isEditMode ? '0.5rem' : '0', paddingRight: '0'}}>
+                      <div className="flex-shrink-0">
                         <Checkbox
                           checked={selectedTrees.size === filteredAndSortedTrees.length && filteredAndSortedTrees.length > 0}
                           onCheckedChange={handleSelectAll}
                           className="border-border"
                         />
-                      </TableHead>
-                    )}
-                    <TableHead className={`!h-auto py-2 ${isEditMode ? 'pl-2' : ''}`}>
+                      </div>
+                    </TableHead>
+                    <TableHead className={`!h-auto py-2 ${!isEditMode ? 'pl-4' : ''}`} style={{width: '35%'}}>
                       <button 
                         onClick={() => handleSort('date')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
@@ -404,7 +404,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         )}
                       </button>
                     </TableHead>
-                    <TableHead className="!h-auto py-2">
+                    <TableHead className="!h-auto py-2" style={{width: '45%'}}>
                       <button 
                         onClick={() => handleSort('rootNode')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
@@ -415,41 +415,43 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         )}
                       </button>
                     </TableHead>
-                    <TableHead className="text-right !h-auto py-2 pr-2">
-                      <button 
-                        onClick={() => handleSort('nodes')}
-                        className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors ml-auto"
-                      >
+                    <TableHead className="!h-auto py-2 pr-2 overflow-visible" style={{width: '10%', minWidth: '10%'}}>
+                      <div className="flex justify-end">
+                        <button 
+                          onClick={() => handleSort('nodes')}
+                          className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors whitespace-nowrap"
+                        >
                         {sortBy === 'nodes' ? (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
                         ) : (
                           <div className="h-3 w-3" />
                         )}
                         Nodes
-                      </button>
+                        </button>
+                      </div>
                     </TableHead>
-                    <TableHead className="w-10 !h-auto py-2 px-2"></TableHead>
+                    <TableHead className="w-12 !h-auto py-2 px-2"></TableHead>
                   </TableRow>
                  </TableHeader>
                  <TableBody>
                    {filteredAndSortedTrees.length > 0 ? (
                      filteredAndSortedTrees.map((tree) => (
-                        <TableRow key={tree.id} className="hover:bg-table-hover">
-                         {isEditMode && (
-                           <TableCell className="py-2 px-2">
-                             <Checkbox
-                               checked={selectedTrees.has(tree.id)}
-                               onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
-                               onClick={(e) => e.stopPropagation()}
-                               className="border-border"
-                             />
-                           </TableCell>
-                         )}
-                         <TableCell 
-                           className={`cursor-pointer py-2 ${isEditMode ? 'pl-2' : ''}`}
-                           onClick={() => handleLoadSession(tree.id)}
-                         >
-                           <span className="break-words text-sm text-muted-foreground">
+                       <TableRow key={tree.id} className="hover:bg-table-hover">
+                        <TableCell className="py-2 overflow-hidden transition-[width,opacity,padding] duration-300 ease-in-out" style={{width: isEditMode ? '1.75rem' : '0', opacity: isEditMode ? 1 : 0, paddingLeft: isEditMode ? '0.5rem' : '0', paddingRight: '0'}}>
+                          <div className="flex-shrink-0">
+                            <Checkbox
+                              checked={selectedTrees.has(tree.id)}
+                              onCheckedChange={(checked) => handleSelectTree(tree.id, checked as boolean)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="border-border"
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell 
+                          className={`cursor-pointer py-2 ${!isEditMode ? 'pl-4' : ''}`}
+                          onClick={() => handleLoadSession(tree.id)}
+                        >
+                           <div className="text-sm text-muted-foreground truncate">
                              {new Date(tree.createdAt).toLocaleDateString('en-US', {
                                year: 'numeric',
                                month: '2-digit',
@@ -457,25 +459,27 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                                hour: '2-digit',
                                minute: '2-digit'
                              }).replace(',', ' at')}
-                           </span>
+                           </div>
                          </TableCell>
-                         <TableCell 
-                           className="cursor-pointer py-2"
-                           onClick={() => handleLoadSession(tree.id)}
-                         >
-                           <span className="text-sm font-medium text-foreground truncate">
-                             {tree.nodes[0]?.title || 'Unknown'}
-                           </span>
-                         </TableCell>
-                         <TableCell 
-                           className="text-right cursor-pointer py-2 pr-2"
-                           onClick={() => handleLoadSession(tree.id)}
-                         >
-                           <span className="text-sm text-muted-foreground">
-                             {tree.nodes.length}
-                           </span>
-                         </TableCell>
-                      <TableCell className="py-2 px-2" onClick={(e) => e.stopPropagation()}>
+                        <TableCell 
+                          className="cursor-pointer py-2"
+                          onClick={() => handleLoadSession(tree.id)}
+                        >
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {tree.nodes[0]?.title || 'Unknown'}
+                          </div>
+                        </TableCell>
+                        <TableCell 
+                          className="cursor-pointer py-2 pr-2 overflow-visible"
+                          onClick={() => handleLoadSession(tree.id)}
+                        >
+                          <div className="flex justify-end">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                              {tree.nodes.length}
+                            </span>
+                          </div>
+                        </TableCell>
+                     <TableCell className="py-2 px-2" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button 
