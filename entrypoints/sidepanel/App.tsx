@@ -98,7 +98,13 @@ function AppContent() {
                             <AdaptiveHome 
                                 currentMode={currentMode}
                                 onNavigateToSessions={() => {
-                                    setSidebarType(SidebarType.sessions);
+                                    setIsTransitioning(true);
+                                    setTimeout(() => {
+                                        setSidebarType(SidebarType.sessions);
+                                        setTimeout(() => {
+                                            setIsTransitioning(false);
+                                        }, 50);
+                                    }, 500);
                                 }}
                             />
                         </div>
@@ -107,7 +113,13 @@ function AppContent() {
                         <div key="sessions" className={`h-full transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100 animate-in fade-in-0 duration-700'}`}>
                             <SessionsPage
                                 onSwitchToTree={() => {
-                                    setSidebarType(SidebarType.home);
+                                    setIsTransitioning(true);
+                                    setTimeout(() => {
+                                        setSidebarType(SidebarType.home);
+                                        setTimeout(() => {
+                                            setIsTransitioning(false);
+                                        }, 50);
+                                    }, 500);
                                 }}
                             />
                         </div>
