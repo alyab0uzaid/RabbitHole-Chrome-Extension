@@ -14,7 +14,7 @@ import { useTree } from '@/lib/tree-context';
 import { WikiTreeNode, SourceContextType } from '@/lib/tree-types';
 import WikiNode, { WikiNodeData } from './WikiNode';
 import type { NodeTypes } from '@xyflow/react';
-import { Network } from 'lucide-react';
+import { Network, Edit2, Check, X } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
@@ -176,7 +176,8 @@ interface TreeViewProps {
 
 export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const { nodes: treeNodes, activeNodeId, setActiveNode, currentSessionName, setCurrentSessionName } = useTree();
-  // Removed title editing functionality
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState('');
   const reactFlowInstance = useRef<any>(null);
   
   // Get the root node name for display
@@ -241,6 +242,25 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
     [setActiveNode, onNodeClick]
   );
 
+  const handleStartEdit = () => {
+    setEditedTitle(rootNodeName);
+    setIsEditingTitle(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingTitle(false);
+    setEditedTitle('');
+  };
+
+  const handleSaveEdit = () => {
+    if (editedTitle.trim()) {
+      // TODO: Implement rename functionality
+      console.log('Renaming session to:', editedTitle);
+      setIsEditingTitle(false);
+      setEditedTitle('');
+    }
+  };
+
   // Remove the empty state - always show the tree view
   // if (treeNodes.length === 0) {
   //   return null;
@@ -252,11 +272,45 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
     <div className="w-full h-full flex flex-col">
       {/* Clean Header */}
       <div className="px-6 py-4 border-b border-border bg-background">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
-              {rootNodeName}
-            </h1>
+        <div className="flex items-center justify-between group">
+          <div className="flex-1">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="text-2xl font-semibold bg-transparent border-b-2 border-primary focus:outline-none"
+                  style={{ fontFamily: 'Montaga, serif' }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveEdit}
+                  className="p-1 text-green-600 hover:bg-green-50 rounded"
+                  disabled={!editedTitle.trim()}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
+                  {rootNodeName}
+                </h1>
+                <button
+                  onClick={handleStartEdit}
+                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             <div className="text-sm text-muted-foreground">
               {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
             </div>

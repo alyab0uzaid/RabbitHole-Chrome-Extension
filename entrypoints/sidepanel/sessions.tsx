@@ -22,6 +22,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Component to render a tree minimap using the same layout algorithm as the main tree
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
@@ -192,6 +200,9 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
   const [bulkDeleteNames, setBulkDeleteNames] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [treeToRename, setTreeToRename] = useState<string | null>(null);
+  const [newTreeName, setNewTreeName] = useState('');
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -212,6 +223,22 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
     setIsBulkDelete(false);
     setDeleteDialogOpen(true);
     console.log('[Sessions] Dialog state set to true');
+  };
+
+  const handleRenameSession = (treeId: string, currentName: string) => {
+    setTreeToRename(treeId);
+    setNewTreeName(currentName);
+    setRenameDialogOpen(true);
+  };
+
+  const handleConfirmRename = () => {
+    if (treeToRename && newTreeName.trim()) {
+      // TODO: Implement rename functionality
+      console.log('Renaming tree:', treeToRename, 'to:', newTreeName);
+      setRenameDialogOpen(false);
+      setTreeToRename(null);
+      setNewTreeName('');
+    }
   };
 
   const confirmDelete = () => {
@@ -331,7 +358,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  placeholder="Search rabbit holes..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 className="pl-10 hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
+                 className="pl-10 bg-white hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
                />
                   </div>
                   
@@ -409,7 +436,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         onClick={() => handleSort('rootNode')}
                         className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
                       >
-                        Root
+                        Name
                         {sortBy === 'rootNode' && (
                           sortOrder === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />
                         )}
@@ -494,7 +521,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                console.log('Rename clicked', tree.id);
+                                handleRenameSession(tree.id, tree.nodes[0]?.title || 'Unknown');
                               }}
                             >
                               <Edit className="mr-2 h-4 w-4" />
@@ -581,6 +608,32 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent className="gap-2">
+          <DialogHeader>
+            <DialogTitle className="text-left">Rename Rabbit Hole</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <Input
+              value={newTreeName}
+              onChange={(e) => setNewTreeName(e.target.value)}
+              placeholder="Enter rabbit hole name..."
+              className="w-full bg-white hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)} className="mt-2 sm:mt-0 bg-background hover:bg-muted">
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmRename} disabled={!newTreeName.trim()}>
+              Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
