@@ -241,22 +241,10 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
     [setActiveNode, onNodeClick]
   );
 
-  if (treeNodes.length === 0) {
-    console.log('[TreeView] Showing empty state');
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4 p-8 text-center">
-        <div className="text-6xl">🕳️</div>
-        <div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">No Active Research Session</h3>
-          <p className="text-sm">
-            Browse Wikipedia to start your exploration journey.
-            <br />
-            Every article you visit will be tracked automatically.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Remove the empty state - always show the tree view
+  // if (treeNodes.length === 0) {
+  //   return null;
+  // }
 
   console.log('[TreeView] Rendering ReactFlow with', flowNodes.length, 'nodes');
 

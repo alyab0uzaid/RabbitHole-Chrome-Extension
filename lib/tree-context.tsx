@@ -63,6 +63,9 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
         // Request current tree from background script (for active tab)
         console.log('[TreeContext] Requesting current tree from background');
         browser.runtime.sendMessage({ messageType: 'getCurrentTree' })
+          .then((response: any) => {
+            console.log('[TreeContext] Received response from background:', response);
+          })
           .catch(err => console.log('[TreeContext] Could not request current tree:', err));
       } catch (error) {
         console.error('[TreeContext] Error loading from storage:', error);
@@ -146,6 +149,7 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
         // Switch to show the tree for a specific tab
         const { tabId: targetTabId, nodes: tabNodes, activeNodeId: tabActiveNodeId, sessionId: tabSessionId, sessionName: tabSessionName } = message;
         console.log('[TreeContext] Switching to tree for tab', targetTabId, 'with', tabNodes?.length || 0, 'nodes');
+        console.log('[TreeContext] Full switchToTabTree message:', message);
         
         setNodes(tabNodes || []);
         setActiveNodeId(tabActiveNodeId || null);

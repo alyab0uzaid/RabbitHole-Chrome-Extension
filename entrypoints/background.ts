@@ -621,11 +621,12 @@ export default defineBackground(() => {
             return true;
         } else if (message.messageType === 'getCurrentTree') {
             // Sidepanel is requesting the current tree state
-            console.log('[Background] Sidepanel requesting current tree');
+            console.log('[Background] Sidepanel requesting current tree, activeTabId:', activeTabId, 'hasSession:', activeTabId ? tabSessions.has(activeTabId) : false);
             
             // Get the active tab and send its tree
             if (activeTabId && tabSessions.has(activeTabId)) {
                 const session = tabSessions.get(activeTabId)!;
+                console.log('[Background] Sending current tree with', session.treeNodes.length, 'nodes');
                 browser.runtime.sendMessage({
                     messageType: MessageType.switchToTabTree,
                     tabId: activeTabId,
@@ -636,6 +637,7 @@ export default defineBackground(() => {
                 }).catch(err => console.log('[Background] Could not send current tree:', err));
             } else {
                 // No active tree, send empty
+                console.log('[Background] No active session found, sending empty tree');
                 browser.runtime.sendMessage({
                     messageType: MessageType.switchToTabTree,
                     tabId: null,
