@@ -180,8 +180,8 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const [editedTitle, setEditedTitle] = useState('');
   const reactFlowInstance = useRef<any>(null);
   
-  // Get the root node name for display
-  const rootNodeName = treeNodes.find(node => node.parentId === null)?.title || 'Untitled Session';
+  // Get the session name for display
+  const sessionName = currentSessionName || treeNodes.find(node => node.parentId === null)?.title || 'Untitled Session';
 
   console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
 
@@ -243,7 +243,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   );
 
   const handleStartEdit = () => {
-    setEditedTitle(rootNodeName);
+    setEditedTitle(sessionName);
     setIsEditingTitle(true);
   };
 
@@ -254,8 +254,8 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
 
   const handleSaveEdit = () => {
     if (editedTitle.trim()) {
-      // TODO: Implement rename functionality
       console.log('Renaming session to:', editedTitle);
+      setCurrentSessionName(editedTitle.trim());
       setIsEditingTitle(false);
       setEditedTitle('');
     }
@@ -301,7 +301,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
             ) : (
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
-                  {rootNodeName}
+                  {sessionName}
                 </h1>
                 <button
                   onClick={handleStartEdit}

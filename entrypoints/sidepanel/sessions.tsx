@@ -188,7 +188,7 @@ interface SessionsPageProps {
 }
 
 export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
-  const { savedTrees, loadTree, deleteSavedTree } = useTree();
+  const { savedTrees, loadTree, deleteSavedTree, renameTree } = useTree();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [treeToDelete, setTreeToDelete] = useState<string | null>(null);
   const [treeToDeleteName, setTreeToDeleteName] = useState<string>('');
@@ -233,8 +233,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
 
   const handleConfirmRename = () => {
     if (treeToRename && newTreeName.trim()) {
-      // TODO: Implement rename functionality
       console.log('Renaming tree:', treeToRename, 'to:', newTreeName);
+      renameTree(treeToRename, newTreeName.trim());
       setRenameDialogOpen(false);
       setTreeToRename(null);
       setNewTreeName('');
@@ -493,7 +493,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                           onClick={() => handleLoadSession(tree.id)}
                         >
                           <div className="text-sm font-medium text-foreground truncate">
-                            {tree.nodes[0]?.title || 'Unknown'}
+                            {tree.name || 'Unknown'}
                           </div>
                         </TableCell>
                         <TableCell 
@@ -521,7 +521,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRenameSession(tree.id, tree.nodes[0]?.title || 'Unknown');
+                                handleRenameSession(tree.id, tree.name || 'Unknown');
                               }}
                             >
                               <Edit className="mr-2 h-4 w-4" />
@@ -539,7 +539,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleDeleteSession(tree.id, tree.nodes[0]?.title || 'Unknown');
+                                handleDeleteSession(tree.id, tree.name || 'Unknown');
                               }}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />

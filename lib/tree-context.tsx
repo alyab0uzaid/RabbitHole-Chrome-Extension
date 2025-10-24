@@ -10,6 +10,7 @@ interface TreeContextValue extends TreeState {
   updateTree: (treeId: string, name: string) => void;
   loadTree: (treeId: string, onLoadCallback?: () => void) => void;
   deleteSavedTree: (treeId: string) => void;
+  renameTree: (treeId: string, newName: string) => void;
   currentSessionId: string | null;
   currentSessionName: string;
   setCurrentSessionName: (name: string) => void;
@@ -383,6 +384,15 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
     setSavedTrees(prev => prev.filter(t => t.id !== treeId));
   }, []);
 
+  // Rename a saved tree
+  const renameTree = useCallback((treeId: string, newName: string) => {
+    setSavedTrees(prev => prev.map(tree =>
+      tree.id === treeId
+        ? { ...tree, name: newName }
+        : tree
+    ));
+  }, []);
+
   const value: TreeContextValue = {
     nodes,
     activeNodeId,
@@ -394,6 +404,7 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
     updateTree,
     loadTree,
     deleteSavedTree,
+    renameTree,
     currentSessionId,
     currentSessionName,
     setCurrentSessionName,
