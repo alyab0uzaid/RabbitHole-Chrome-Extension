@@ -44,7 +44,7 @@ const Sidebar = (
                                         : "text-muted-foreground hover:text-foreground hover:bg-white hover:shadow-md dark:hover:bg-white/10"
                                 )}
                             >
-                                <Home className="w-4 h-4" />
+                                <Network className="w-4 h-4" />
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
