@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, Star, StarOff, X } from 'lucide-react';
+import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AlertDialog,
@@ -526,15 +526,6 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               <span>Rename</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log('Star clicked', tree.id);
-                              }}
-                            >
-                              <Star className="mr-2 h-4 w-4" />
-                              <span>Star</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={(e) => {
