@@ -560,6 +560,16 @@ export default defineBackground(() => {
                 });
             }
             // Don't return true or send response - fire and forget
+        } else if (message.messageType === 'getTreeForMinimap') {
+            // Content script requesting tree state for minimap
+            if (sender.tab?.id) {
+                const session = getTabSession(sender.tab.id);
+                sendResponse({
+                    treeNodes: session.treeNodes || [],
+                    activeNodeId: session.activeNodeId || null
+                });
+                return true; // Keep channel open for async response
+            }
         } else if (message.messageType === 'loadTreeIntoCurrentTab') {
             // Load a saved tree into the current tab
             console.log('[Background] Loading tree into current tab:', message.treeName);
@@ -592,6 +602,19 @@ export default defineBackground(() => {
                     // Update sidepanel
                     updateSidepanelForTab(tabId);
                     
+                    // Update minimap after navigation completes
+                    const updateMinimapAfterNav = () => {
+                        browser.tabs.onUpdated.addListener(function listener(updatedTabId, info) {
+                            if (updatedTabId === tabId && info.status === 'complete') {
+                                updateMinimapForTab(tabId);
+                                browser.tabs.onUpdated.removeListener(listener);
+                            }
+                        });
+                    };
+                    updateMinimapAfterNav();
+                    // Also try immediately in case page is already loaded
+                    setTimeout(() => updateMinimapForTab(tabId), 100);
+                    
                     // Persist tab sessions
                     persistTabSessions();
                 } else {
@@ -608,9 +631,23 @@ export default defineBackground(() => {
                         newSession.sessionId = message.treeId || null; // Use tree ID as session ID
                         newSession.initialLoadedArticle = message.treeNodes?.[0]?.title || null;
                         
-                        // Update sidepanel to show the new tab's tree
+                        // Update sidepanel and minimap to show the new tab's tree
                         activeTabId = newTab.id!;
                         updateSidepanelForTab(newTab.id!);
+                        // Wait for the tab to load, then update minimap
+                        const updateMinimapWhenReady = () => {
+                            if (newTab.status === 'complete') {
+                                updateMinimapForTab(newTab.id!);
+                            } else {
+                                browser.tabs.onUpdated.addListener(function listener(tabId, info) {
+                                    if (tabId === newTab.id && info.status === 'complete') {
+                                        updateMinimapForTab(newTab.id!);
+                                        browser.tabs.onUpdated.removeListener(listener);
+                                    }
+                                });
+                            }
+                        };
+                        updateMinimapWhenReady();
                         
                         // Persist tab sessions
                         persistTabSessions();

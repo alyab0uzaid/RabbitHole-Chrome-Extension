@@ -31,9 +31,59 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+// Helper to get computed color from CSS variable - simplified with direct fallbacks
+function getComputedColor(cssVar: string, opacity: number = 1): string {
+  // Direct color mappings based on your theme
+  const colorMap: { [key: string]: string } = {
+    '--primary': '89, 138, 217', // Blue
+    '--muted-foreground': '131, 130, 125', // Grey
+    '--card': '250, 249, 245', // Light beige
+    '--muted': '237, 233, 222', // Light muted
+    '--border': '218, 217, 212', // Light grey border
+  };
+  
+  // Try to get from CSS variable first
+  if (typeof window !== 'undefined' && document.body) {
+    try {
+      const root = document.documentElement;
+      const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
+      if (value) {
+        const tempEl = document.createElement('div');
+        tempEl.style.position = 'absolute';
+        tempEl.style.visibility = 'hidden';
+        tempEl.style.width = '1px';
+        tempEl.style.height = '1px';
+        tempEl.style.color = `oklch(${value})`;
+        document.body.appendChild(tempEl);
+        
+        const computedColor = getComputedStyle(tempEl).color;
+        document.body.removeChild(tempEl);
+        
+        const match = computedColor.match(/(\d+),\s*(\d+),\s*(\d+)/);
+        if (match && match[1] !== '0' && match[2] !== '0' && match[3] !== '0') {
+          // Only use if not black
+          return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${opacity})`;
+        }
+      }
+    } catch (e) {
+      // Fall through to fallback
+    }
+  }
+  
+  // Use fallback colors
+  const rgb = colorMap[cssVar] || '136, 136, 136';
+  return `rgba(${rgb}, ${opacity})`;
+}
+
 // Component to render a tree minimap using the same layout algorithm as the main tree
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
   if (nodes.length === 0) return null;
+  
+  // Get theme colors - compute on each render to ensure they're current
+  const edgeColor = getComputedColor('--muted-foreground', 0.6);
+  const primaryColor = getComputedColor('--primary', 1);
+  const borderColor = getComputedColor('--border', 1);
+  const mutedColor = getComputedColor('--muted', 0.9);
 
   const svgWidth = 120;
   const svgHeight = 80;
@@ -151,7 +201,7 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
                 y1={parent.y + offsetY}
                 x2={child.x + offsetX}
                 y2={child.y + offsetY}
-                stroke="hsl(var(--muted-foreground) / 0.4)"
+                stroke={edgeColor}
                 strokeWidth="1.5"
               />
             );
@@ -172,8 +222,8 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
               width={nodeWidth}
               height={nodeHeight}
               rx="2"
-              fill="hsl(var(--card) / 0.3)"
-              stroke={node.parentId === null ? "hsl(var(--primary))" : "hsl(var(--border))"}
+              fill={node.parentId === null ? primaryColor : mutedColor}
+              stroke={node.parentId === null ? primaryColor : borderColor}
               strokeWidth="1.5"
             />
           );
@@ -358,7 +408,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  placeholder="Search rabbit holes..."
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 className="pl-10 bg-white hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
+                 className="pl-10 bg-white border-border hover:border-border-hover focus:ring-2 focus:ring-primary focus:ring-opacity-50 transition-all duration-200"
                />
                   </div>
                   
@@ -463,7 +513,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  <TableBody>
                    {filteredAndSortedTrees.length > 0 ? (
                      filteredAndSortedTrees.map((tree) => (
-                       <TableRow key={tree.id} className="hover:bg-table-hover">
+                       <TableRow key={tree.id} className="hover:bg-table-header">
                         <TableCell className="py-2 overflow-hidden transition-[width,opacity,padding] duration-300 ease-in-out" style={{width: isEditMode ? '1.75rem' : '0', opacity: isEditMode ? 1 : 0, paddingLeft: isEditMode ? '0.5rem' : '0', paddingRight: '0'}}>
                           <div className="flex-shrink-0">
                             <Checkbox
@@ -511,7 +561,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                           <DropdownMenuTrigger asChild>
                             <Button 
                               variant="ghost" 
-                              className="h-8 w-8 p-0 text-text-muted hover:text-foreground hover:bg-table-header"
+                              className="h-8 w-8 p-0 text-text-muted hover:text-foreground hover:bg-table-hover"
                             >
                               <span className="sr-only">Open menu</span>
                               <MoreVertical className="h-4 w-4" />

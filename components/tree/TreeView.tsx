@@ -14,16 +14,59 @@ import { useTree } from '@/lib/tree-context';
 import { WikiTreeNode, SourceContextType } from '@/lib/tree-types';
 import WikiNode, { WikiNodeData } from './WikiNode';
 import type { NodeTypes } from '@xyflow/react';
-import { Network, Edit2, Check, X } from 'lucide-react';
+import { Network, Edit2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
 };
 
+// Helper to get computed color from CSS variable with optional opacity
+function getComputedColor(cssVar: string, opacity: number = 1): string {
+  if (typeof window === 'undefined') return opacity < 1 ? `rgba(200, 200, 200, ${opacity})` : '#c8c8c8';
+  const root = document.documentElement;
+  const value = getComputedStyle(root).getPropertyValue(cssVar).trim();
+  if (!value) return opacity < 1 ? `rgba(200, 200, 200, ${opacity})` : '#c8c8c8';
+  
+  // Create temp element to get computed color
+  const tempEl = document.createElement('div');
+  tempEl.style.position = 'absolute';
+  tempEl.style.visibility = 'hidden';
+  tempEl.style.color = `oklch(${value})`;
+  document.body.appendChild(tempEl);
+  
+  const computedColor = getComputedStyle(tempEl).color;
+  document.body.removeChild(tempEl);
+  
+  // Extract RGB and apply opacity if needed
+  const match = computedColor.match(/(\d+),\s*(\d+),\s*(\d+)/);
+  if (match) {
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    
+    // If color is too dark (black or near-black), use a light grey fallback
+    if (r < 50 && g < 50 && b < 50) {
+      return opacity < 1 ? `rgba(200, 200, 200, ${opacity})` : 'rgb(200, 200, 200)';
+    }
+    
+    if (opacity < 1) {
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  
+  return opacity < 1 ? `rgba(200, 200, 200, ${opacity})` : '#c8c8c8';
+}
+
 // Convert tree data to React Flow format with proper branching layout and collision avoidance
 function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | null): { nodes: Node<WikiNodeData>[]; edges: Edge[] } {
   const nodes: Node<WikiNodeData>[] = [];
   const edges: Edge[] = [];
+  
+  // Get colors once - use muted-foreground with higher opacity for light grey lines
+  const edgeColor = getComputedColor('--muted-foreground', 0.4);
+  const primaryColor = getComputedColor('--primary');
 
   if (treeNodes.length === 0) return { nodes, edges };
 
@@ -160,8 +203,11 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
         style: {
           strokeWidth: 2,
           stroke: node.id === activeNodeId 
-            ? 'hsl(var(--primary) / 0.6)' 
-            : 'hsl(var(--muted-foreground) / 0.2)'
+            ? primaryColor 
+            : edgeColor
+        },
+        pathOptions: {
+          radius: 8 // Corner radius for smooth step edges
         }
       });
     }
@@ -271,49 +317,49 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Clean Header */}
-      <div className="px-6 py-4 border-b border-border bg-background">
-        <div className="flex items-center justify-between group">
-          <div className="flex-1">
-            {isEditingTitle ? (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-2xl font-semibold bg-transparent border-b-2 border-primary focus:outline-none"
-                  style={{ fontFamily: 'Montaga, serif' }}
-                  autoFocus
-                />
-                <button
-                  onClick={handleSaveEdit}
-                  className="p-1 text-green-600 hover:bg-green-50 rounded"
-                  disabled={!editedTitle.trim()}
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className="p-1 text-red-600 hover:bg-red-50 rounded"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold" style={{ fontFamily: 'Montaga, serif' }}>
-                  {sessionName}
-                </h1>
-                <button
-                  onClick={handleStartEdit}
-                  className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-            <div className="text-sm text-muted-foreground">
-              {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
+      <div className="px-6 py-5 border-b border-border bg-background">
+        <div className="space-y-1">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-3">
+              <Input
+                type="text"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && editedTitle.trim()) {
+                    handleSaveEdit();
+                  } else if (e.key === 'Escape') {
+                    handleCancelEdit();
+                  }
+                }}
+                onBlur={() => {
+                  if (editedTitle.trim()) {
+                    handleSaveEdit();
+                  } else {
+                    handleCancelEdit();
+                  }
+                }}
+                className="text-2xl font-medium h-10 border-0 border-b border-primary/50 focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none bg-transparent px-0"
+                style={{ fontFamily: 'var(--font-serif)' }}
+                autoFocus
+              />
             </div>
+          ) : (
+            <button
+              onClick={handleStartEdit}
+              className="group/title flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
+            >
+              <h1 
+                className="text-2xl font-medium text-foreground" 
+                style={{ fontFamily: 'var(--font-serif)' }}
+              >
+                {sessionName}
+              </h1>
+              <Edit2 className="w-4 h-4 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
+            </button>
+          )}
+          <div className="text-sm text-muted-foreground font-medium">
+            {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
           </div>
         </div>
       </div>
@@ -327,15 +373,23 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
           onNodeClick={handleNodeClick}
           nodeTypes={nodeTypes}
           connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineOptions={{
+            pathOptions: {
+              radius: 8 // Corner radius for connection lines
+            }
+          }}
           fitView={false}
           minZoom={0.1}
           maxZoom={2}
           defaultEdgeOptions={{
             style: { 
               strokeWidth: 2,
-              stroke: 'hsl(var(--border))'
+              stroke: getComputedColor('--muted-foreground', 0.4)
             },
-            animated: false
+            animated: false,
+            pathOptions: {
+              radius: 8 // Corner radius for smooth step edges
+            }
           }}
           onInit={(instance) => {
             reactFlowInstance.current = instance;

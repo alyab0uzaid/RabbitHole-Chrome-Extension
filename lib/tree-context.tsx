@@ -53,6 +53,9 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
           setNodes(session.nodes || []);
           setActiveNodeId(session.activeNodeId || null);
           setCurrentSessionId(session.sessionId || null);
+          if (session.sessionName) {
+            setCurrentSessionName(session.sessionName);
+          }
           console.log('[TreeContext] Loaded current session from storage:', session.nodes?.length, 'nodes');
         }
 
@@ -152,10 +155,18 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
         console.log('[TreeContext] Switching to tree for tab', targetTabId, 'with', tabNodes?.length || 0, 'nodes');
         console.log('[TreeContext] Full switchToTabTree message:', message);
         
+        const previousSessionId = currentSessionId;
         setNodes(tabNodes || []);
         setActiveNodeId(tabActiveNodeId || null);
         setCurrentSessionId(tabSessionId || null);
-        setCurrentSessionName(tabSessionName || '');
+        // Only update session name if:
+        // 1. We don't have a current session name, OR
+        // 2. The session ID changed (different session), OR
+        // 3. The current session name is empty
+        // This preserves user-renamed session names when navigating within the same session
+        if (tabSessionName && (!currentSessionName || currentSessionName === '' || tabSessionId !== previousSessionId)) {
+          setCurrentSessionName(tabSessionName);
+        }
       } else if (message.messageType === 'autoSaveCurrentTree') {
         // Auto-save the current tree before loading a new one
         console.log('[TreeContext] Auto-saving tree:', message.treeName);
@@ -201,7 +212,8 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
           [STORAGE_KEY_CURRENT_SESSION]: {
             nodes,
             activeNodeId,
-            sessionId: currentSessionId
+            sessionId: currentSessionId,
+            sessionName: currentSessionName
           }
         });
         console.log('[TreeContext] Persisted current session to storage');
@@ -211,7 +223,7 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
     }
 
     persistCurrentSession();
-  }, [nodes, activeNodeId, currentSessionId, isLoaded]);
+  }, [nodes, activeNodeId, currentSessionId, currentSessionName, isLoaded]);
 
   // Persist saved trees whenever they change
   useEffect(() => {

@@ -14,10 +14,67 @@ export default defineContentScript({
         // Initialize minimap
         initializeMinimap();
 
+        // Helper function to get CSS variable value as RGB
+        function getCSSVariableAsRGB(variableName: string, alpha: number = 1): string {
+            // Direct color mappings as fallback
+            const colorMap: { [key: string]: string } = {
+                '--primary': '89, 138, 217',
+                '--muted-foreground': '131, 130, 125',
+                '--card': '250, 249, 245',
+                '--muted': '237, 233, 222',
+                '--border': '218, 217, 212',
+            };
+            
+            if (!document.body) {
+                const rgb = colorMap[variableName] || '136, 136, 136';
+                return `rgba(${rgb}, ${alpha})`;
+            }
+            
+            try {
+                const root = document.documentElement;
+                const value = getComputedStyle(root).getPropertyValue(variableName).trim();
+                if (!value) {
+                    const rgb = colorMap[variableName] || '136, 136, 136';
+                    return `rgba(${rgb}, ${alpha})`;
+                }
+                
+                // Create a temporary element to get the computed color value
+                const tempEl = document.createElement('div');
+                tempEl.style.position = 'absolute';
+                tempEl.style.visibility = 'hidden';
+                tempEl.style.width = '1px';
+                tempEl.style.height = '1px';
+                tempEl.style.color = `oklch(${value})`;
+                document.body.appendChild(tempEl);
+                
+                const computedColor = getComputedStyle(tempEl).color;
+                document.body.removeChild(tempEl);
+                
+                // Extract RGB values from computed color
+                const match = computedColor.match(/(\d+),\s*(\d+),\s*(\d+)/);
+                if (match && match[1] !== '0' && match[2] !== '0' && match[3] !== '0') {
+                    // Only use if not black
+                    return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${alpha})`;
+                }
+            } catch (e) {
+                // Fall through to fallback
+            }
+            
+            // Fallback to theme colors
+            const rgb = colorMap[variableName] || '136, 136, 136';
+            return `rgba(${rgb}, ${alpha})`;
+        }
+
         function initializeMinimap() {
             // Create tracking indicator (minimap container)
             trackingIndicator = document.createElement('div');
             trackingIndicator.id = 'rabbithole-tracking-indicator';
+            
+            // Get theme colors
+            const bgColor = getCSSVariableAsRGB('--background', 0.8);
+            const borderColor = getCSSVariableAsRGB('--border', 0.7);
+            const shadowColor = getCSSVariableAsRGB('--foreground', 0.1);
+            
             Object.assign(trackingIndicator.style, {
                 position: 'fixed',
                 bottom: '20px',
@@ -27,10 +84,10 @@ export default defineContentScript({
                 zIndex: '999999',
                 pointerEvents: 'auto',
                 borderRadius: '8px',
-                background: 'rgba(0, 0, 0, 0.5)',
+                background: bgColor,
                 backdropFilter: 'blur(10px)',
-                border: '2px solid rgba(255, 255, 255, 0.7)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.4)',
+                border: `2px solid ${borderColor}`,
+                boxShadow: `0 4px 12px ${shadowColor}, inset 0 0 20px ${shadowColor}`,
                 transition: 'all 0.3s ease',
                 cursor: 'pointer'
             });
@@ -39,16 +96,16 @@ export default defineContentScript({
             trackingIndicator.addEventListener('mouseenter', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1.05)';
-                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.65)';
-                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.9);
+                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.9);
                 }
             });
 
             trackingIndicator.addEventListener('mouseleave', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1)';
-                    trackingIndicator.style.background = 'rgba(0, 0, 0, 0.5)';
-                    trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.7)';
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.8);
+                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.7);
                 }
             });
 
@@ -71,11 +128,27 @@ export default defineContentScript({
         // Listen for tree updates from background
         browser.runtime.onMessage.addListener((message: any) => {
             if (message.messageType === 'updateTreeMinimap' && message.treeNodes) {
+                console.log('[Content] Updating minimap with', message.treeNodes.length, 'nodes');
                 currentTreeNodes = message.treeNodes;
                 currentActiveNodeId = message.activeNodeId || null;
                 updateMinimapContent();
             }
         });
+        
+        // Also update minimap when page loads if we have nodes
+        if (document.readyState === 'complete') {
+            // Request initial tree state
+            browser.runtime.sendMessage({ messageType: 'getTreeForMinimap' }).then((response: any) => {
+                if (response && response.treeNodes) {
+                    console.log('[Content] Got initial tree state:', response.treeNodes.length, 'nodes');
+                    currentTreeNodes = response.treeNodes;
+                    currentActiveNodeId = response.activeNodeId || null;
+                    updateMinimapContent();
+                }
+            }).catch(() => {
+                // Ignore errors
+            });
+        }
 
         function updateMinimapContent() {
             if (!trackingIndicator) return;
@@ -89,20 +162,10 @@ export default defineContentScript({
             // Show minimap
             trackingIndicator.style.opacity = '1';
             
-            // Check if dark mode
-            const isDark = document.documentElement.classList.contains('skin-theme-clientpref-night') || 
-                          document.body.classList.contains('skin-theme-clientpref-night');
-            
-            if (isDark) {
-                trackingIndicator.style.background = 'rgba(0, 0, 0, 0.65)';
-                trackingIndicator.style.backdropFilter = 'blur(10px)';
-                trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.9)';
-            } else {
-                // Light mode
-                trackingIndicator.style.background = 'rgba(0, 0, 0, 0.5)';
-                trackingIndicator.style.backdropFilter = 'blur(10px)';
-                trackingIndicator.style.borderColor = 'rgba(255, 255, 255, 0.7)';
-            }
+            // Use theme colors
+            trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.8);
+            trackingIndicator.style.backdropFilter = 'blur(10px)';
+            trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.7);
 
             // Render minimap SVG
             const svgContent = renderMinimapSVG(currentTreeNodes, currentActiveNodeId);
@@ -199,11 +262,14 @@ export default defineContentScript({
             // Start building SVG
             let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="display: block;">`;
             
+            // Get shadow color for filter
+            const shadowColor = getCSSVariableAsRGB('--foreground', 0.3);
+            
             // Add definitions for filters and animations
             svgContent += `
                 <defs>
                     <filter id="nodeShadow">
-                        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.3)"/>
+                        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="${shadowColor}"/>
                     </filter>
                     <style>
                         @keyframes blurFadeIn {
@@ -239,12 +305,10 @@ export default defineContentScript({
                     const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
                     
                     const isActive = node.id === activeNodeId;
-                        // Use actual color values since CSS variables don't work in SVG strings
-                        const isDark = document.documentElement.classList.contains('skin-theme-clientpref-night') || 
-                                      document.body.classList.contains('skin-theme-clientpref-night');
+                        // Use theme colors - use muted-foreground for better visibility
                         const strokeColor = isActive 
-                            ? (isDark ? 'rgba(89, 162, 217, 0.6)' : 'rgba(89, 162, 217, 0.6)')
-                            : (isDark ? 'rgba(195, 192, 182, 0.2)' : 'rgba(61, 57, 41, 0.2)');
+                            ? getCSSVariableAsRGB('--primary', 0.6)
+                            : getCSSVariableAsRGB('--muted-foreground', 0.5);
                         svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                     }
                 }
@@ -257,20 +321,19 @@ export default defineContentScript({
                     const isActive = node.id === activeNodeId;
                     const isRoot = node.parentId === null;
                     
-                    // Use actual color values since CSS variables don't work in SVG strings
-                    const isDark = document.documentElement.classList.contains('skin-theme-clientpref-night') || 
-                                  document.body.classList.contains('skin-theme-clientpref-night');
+                    // Use theme colors
                     let fillColor;
                     if (isActive) {
-                        fillColor = isDark ? 'rgb(89, 162, 217)' : 'rgb(89, 162, 217)'; // Primary blue
+                        fillColor = getCSSVariableAsRGB('--primary', 1); // Primary color
                     } else if (isRoot) {
-                        fillColor = isDark ? 'rgb(38, 38, 36)' : 'rgb(250, 249, 245)'; // Card background
+                        fillColor = getCSSVariableAsRGB('--card', 1); // Card background
                     } else {
-                        fillColor = isDark ? 'rgb(27, 27, 25)' : 'rgb(237, 233, 222)'; // Muted
+                        fillColor = getCSSVariableAsRGB('--muted', 1); // Muted background
                     }
                     
+                    const borderColor = getCSSVariableAsRGB('--border', 1);
                     const radius = 6; // Circle radius
-                    svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="black" stroke-width="0.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
+                    svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="${borderColor}" stroke-width="0.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
                 }
             });
 
