@@ -16,13 +16,13 @@ export default defineContentScript({
 
         // Helper function to get CSS variable value as RGB
         function getCSSVariableAsRGB(variableName: string, alpha: number = 1): string {
-            // Direct color mappings as fallback
+            // Theme color fallbacks (no tan - use primary, foreground, border, background, muted-foreground)
             const colorMap: { [key: string]: string } = {
                 '--primary': '89, 138, 217',
-                '--muted-foreground': '131, 130, 125',
-                '--card': '250, 249, 245',
-                '--muted': '237, 233, 222',
-                '--border': '218, 217, 212',
+                '--foreground': '30, 30, 35',
+                '--background': '255, 255, 255',
+                '--muted-foreground': '100, 100, 110',
+                '--border': '180, 180, 190',
             };
             
             if (!document.body) {
@@ -290,7 +290,7 @@ export default defineContentScript({
                 </defs>
             `;
 
-            // Draw edges first (so nodes appear on top)
+            // Draw edges first (behind), then circles on top
             nodes.forEach(node => {
                 if (node.parentId) {
                     const parent = nodes.find(n => n.id === node.parentId);
@@ -299,40 +299,33 @@ export default defineContentScript({
                         const parentY = nodePositions[parent.id].y + offsetY;
                         const childX = nodePositions[node.id].x + offsetX;
                         const childY = nodePositions[node.id].y + offsetY;
-                        
-                        // Create smooth step path
-                    const midY = parentY + (childY - parentY) / 2;
-                    const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
-                    
-                    const isActive = node.id === activeNodeId;
-                        // Use theme colors - use muted-foreground for better visibility
+                        const midY = parentY + (childY - parentY) / 2;
+                        const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
+                        const isActive = node.id === activeNodeId;
                         const strokeColor = isActive 
-                            ? getCSSVariableAsRGB('--primary', 0.6)
-                            : getCSSVariableAsRGB('--muted-foreground', 0.5);
+                            ? getCSSVariableAsRGB('--primary', 0.9)
+                            : getCSSVariableAsRGB('--foreground', 0.5);
                         svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                     }
                 }
             });
 
-            // Draw nodes as circles with drop shadow - drawn AFTER edges so they're on top
+            // Draw nodes as circles on top of edges
             nodes.forEach(node => {
                 const pos = nodePositions[node.id];
                 if (pos) {
                     const isActive = node.id === activeNodeId;
                     const isRoot = node.parentId === null;
-                    
-                    // Use theme colors
                     let fillColor;
                     if (isActive) {
-                        fillColor = getCSSVariableAsRGB('--primary', 1); // Primary color
+                        fillColor = getCSSVariableAsRGB('--primary', 1);
                     } else if (isRoot) {
-                        fillColor = getCSSVariableAsRGB('--card', 1); // Card background
+                        fillColor = getCSSVariableAsRGB('--primary', 1);
                     } else {
-                        fillColor = getCSSVariableAsRGB('--muted', 1); // Muted background
+                        fillColor = getCSSVariableAsRGB('--muted-foreground', 1);
                     }
-                    
                     const borderColor = getCSSVariableAsRGB('--border', 1);
-                    const radius = 6; // Circle radius
+                    const radius = 6;
                     svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="${borderColor}" stroke-width="0.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
                 }
             });

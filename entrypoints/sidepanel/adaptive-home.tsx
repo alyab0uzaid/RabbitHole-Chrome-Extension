@@ -4,7 +4,7 @@ import { BrowsingMode } from '@/lib/mode-manager';
 import TreeView from '@/components/tree/TreeView';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Network, FolderOpen, BookOpen, Globe } from 'lucide-react';
+import { FolderOpen, BookOpen, Globe } from 'lucide-react';
 import { browser } from 'wxt/browser';
 import { MessageType } from '@/entrypoints/types';
 
@@ -65,9 +65,11 @@ export function AdaptiveHome({ currentMode, onNavigateToSessions }: AdaptiveHome
     <div className="flex flex-col h-full">
       {/* Compact welcome section at top */}
       <div className="flex flex-col items-center px-6 py-8 text-center">
-        <div className="w-16 h-16 mx-auto rounded-full bg-primary flex items-center justify-center mb-4">
-          <Network className="w-8 h-8 text-primary-foreground" />
-        </div>
+        <img 
+          src={browser.runtime.getURL('/icon/128.png')} 
+          alt="RabbitHole" 
+          className="w-16 h-16 mx-auto mb-4 object-contain"
+        />
         <h1 className="text-2xl font-semibold text-foreground mb-2">
           Start exploring
         </h1>

@@ -33,13 +33,12 @@ import {
 
 // Helper to get computed color from CSS variable - simplified with direct fallbacks
 function getComputedColor(cssVar: string, opacity: number = 1): string {
-  // Direct color mappings based on your theme
+  // Theme color fallbacks (no tan - primary, foreground, border, muted-foreground)
   const colorMap: { [key: string]: string } = {
-    '--primary': '89, 138, 217', // Blue
-    '--muted-foreground': '131, 130, 125', // Grey
-    '--card': '250, 249, 245', // Light beige
-    '--muted': '237, 233, 222', // Light muted
-    '--border': '218, 217, 212', // Light grey border
+    '--primary': '89, 138, 217',
+    '--foreground': '30, 30, 35',
+    '--muted-foreground': '100, 100, 110',
+    '--border': '180, 180, 190',
   };
   
   // Try to get from CSS variable first
@@ -79,11 +78,11 @@ function getComputedColor(cssVar: string, opacity: number = 1): string {
 const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
   if (nodes.length === 0) return null;
   
-  // Get theme colors - compute on each render to ensure they're current
-  const edgeColor = getComputedColor('--muted-foreground', 0.6);
+  // Get theme colors - foreground for lines (better contrast), primary for nodes
+  const edgeColor = getComputedColor('--foreground', 0.5);
   const primaryColor = getComputedColor('--primary', 1);
   const borderColor = getComputedColor('--border', 1);
-  const mutedColor = getComputedColor('--muted', 0.9);
+  const childNodeColor = getComputedColor('--primary', 0.35);
 
   const svgWidth = 120;
   const svgHeight = 80;
@@ -222,7 +221,7 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
               width={nodeWidth}
               height={nodeHeight}
               rx="2"
-              fill={node.parentId === null ? primaryColor : mutedColor}
+              fill={node.parentId === null ? primaryColor : childNodeColor}
               stroke={node.parentId === null ? primaryColor : borderColor}
               strokeWidth="1.5"
             />
