@@ -320,7 +320,7 @@ export default defineContentScript({
                     if (isActive) {
                         fillColor = getCSSVariableAsRGB('--primary', 1);
                     } else if (isRoot) {
-                        fillColor = getCSSVariableAsRGB('--primary', 1);
+                        fillColor = getCSSVariableAsRGB('--muted-foreground', 1);
                     } else {
                         fillColor = getCSSVariableAsRGB('--muted-foreground', 1);
                     }

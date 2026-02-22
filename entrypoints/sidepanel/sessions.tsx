@@ -82,6 +82,7 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
   const edgeColor = getComputedColor('--foreground', 0.5);
   const primaryColor = getComputedColor('--primary', 1);
   const borderColor = getComputedColor('--border', 1);
+  const rootNodeColor = getComputedColor('--muted-foreground', 1);
   const childNodeColor = getComputedColor('--primary', 0.35);
 
   const svgWidth = 120;
@@ -221,8 +222,8 @@ const TreeMinimap: React.FC<{ nodes: any[] }> = ({ nodes }) => {
               width={nodeWidth}
               height={nodeHeight}
               rx="2"
-              fill={node.parentId === null ? primaryColor : childNodeColor}
-              stroke={node.parentId === null ? primaryColor : borderColor}
+              fill={node.parentId === null ? rootNodeColor : childNodeColor}
+              stroke={node.parentId === null ? rootNodeColor : borderColor}
               strokeWidth="1.5"
             />
           );

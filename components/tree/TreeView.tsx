@@ -381,6 +381,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
           fitView={false}
           minZoom={0.1}
           maxZoom={2}
+          proOptions={{ hideAttribution: true }}
           defaultEdgeOptions={{
             style: { 
               strokeWidth: 2,
