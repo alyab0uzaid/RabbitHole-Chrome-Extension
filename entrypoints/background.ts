@@ -184,8 +184,8 @@ export default defineBackground(() => {
             // Auto-generate session name if this is the first node
             if (session.treeNodes.length === 1) {
                 session.sessionId = `session-${Date.now()}-${tabId}`;
-                // Auto-name based on root node + date
-                session.originalTreeName = `${newNode.title} - ${new Date().toLocaleDateString()}`;
+                // Auto-name: just the root node title
+                session.originalTreeName = newNode.title;
             }
             
             console.log('[Background] Added new node to tab', tabId, ':', newNode.id, 'Total nodes:', session.treeNodes.length);
@@ -259,7 +259,7 @@ export default defineBackground(() => {
             nodes: session.treeNodes,
             activeNodeId: session.activeNodeId,
             sessionId: session.sessionId,
-            sessionName: session.originalTreeName || `Rabbit Hole - ${new Date().toLocaleDateString()}`
+            sessionName: session.originalTreeName || 'Rabbit Hole'
         }).catch(err => console.log('[Background] Could not update sidepanel for tab', tabId, ':', err));
     }
 

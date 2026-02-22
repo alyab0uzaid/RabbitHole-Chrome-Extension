@@ -226,8 +226,8 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   const [editedTitle, setEditedTitle] = useState('');
   const reactFlowInstance = useRef<any>(null);
   
-  // Get the session name for display
-  const sessionName = currentSessionName || treeNodes.find(node => node.parentId === null)?.title || 'Untitled Session';
+  const rootNode = treeNodes.find(node => node.parentId === null);
+  const sessionName = currentSessionName || rootNode?.title || 'Untitled Session';
 
   console.log('[TreeView] Rendering with treeNodes:', treeNodes.length, 'nodes');
 
@@ -358,8 +358,14 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
               <Edit2 className="w-4 h-4 text-muted-foreground opacity-0 group-hover/title:opacity-100 transition-opacity" />
             </button>
           )}
-          <div className="text-sm text-muted-foreground font-medium">
-            {treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+            {rootNode && (
+              <>
+                <span>{new Date(rootNode.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                <span>·</span>
+              </>
+            )}
+            <span>{treeNodes.length} {treeNodes.length === 1 ? 'node' : 'nodes'}</span>
           </div>
         </div>
       </div>

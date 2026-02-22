@@ -113,9 +113,9 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
             console.log('[TreeContext] Adding node:', newNode);
             setActiveNodeId(newNode.id);
 
-            // Set default session name if this is the first node
+            // Set default session name if this is the first node (just the root node title)
             if (prevNodes.length === 0 && !currentSessionName) {
-              setCurrentSessionName(`${articleTitle} - ${new Date().toLocaleDateString()}`);
+              setCurrentSessionName(articleTitle);
             }
 
             return [...prevNodes, newNode];
@@ -145,8 +145,8 @@ export function TreeProvider({ children }: { children: React.ReactNode }) {
           setCurrentSessionId(restoredSessionId);
           // Update session name if we have a default one
           if (!currentSessionName && restoredNodes.length > 0) {
-            const firstNode = restoredNodes[0];
-            setCurrentSessionName(`${firstNode.title} - ${new Date().toLocaleDateString()}`);
+            const rootNode = restoredNodes.find(n => n.parentId === null) || restoredNodes[0];
+            setCurrentSessionName(rootNode.title);
           }
         }
       } else if (message.messageType === 'switchToTabTree') {
