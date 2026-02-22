@@ -1,10 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Trash2, Play, ChevronUp, ChevronDown, Search, MoreVertical, Edit, X } from 'lucide-react';
+import { Trash2, ChevronUp, ChevronDown, Search, MoreVertical, Edit, X } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   AlertDialog,
@@ -25,7 +24,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -548,7 +546,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
             width: '16rem',
             height: '10rem',
           }}
-          className="rounded-lg border border-border bg-background shadow-lg overflow-hidden"
+          className="rounded-lg border border-border bg-background shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         >
           {hoveredTree.nodes.length > 0 ? (
             <TreePreviewFlow nodes={hoveredTree.nodes} />
