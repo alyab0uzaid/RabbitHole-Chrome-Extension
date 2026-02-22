@@ -64,8 +64,8 @@ function convertToFlowNodes(treeNodes: WikiTreeNode[], activeNodeId: string | nu
   const nodes: Node<WikiNodeData>[] = [];
   const edges: Edge[] = [];
   
-  // Get colors once - use muted-foreground with higher opacity for light grey lines
-  const edgeColor = getComputedColor('--muted-foreground', 0.4);
+  // Get colors once - same as node outlines (--border)
+  const edgeColor = getComputedColor('--border', 1);
   const primaryColor = getComputedColor('--primary');
 
   if (treeNodes.length === 0) return { nodes, edges };
@@ -385,7 +385,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
           defaultEdgeOptions={{
             style: { 
               strokeWidth: 2,
-              stroke: getComputedColor('--muted-foreground', 0.4)
+              stroke: getComputedColor('--border', 1)
             },
             animated: false,
             pathOptions: {

@@ -70,10 +70,10 @@ export default defineContentScript({
             trackingIndicator = document.createElement('div');
             trackingIndicator.id = 'rabbithole-tracking-indicator';
             
-            // Get theme colors
-            const bgColor = getCSSVariableAsRGB('--background', 0.8);
-            const borderColor = getCSSVariableAsRGB('--border', 0.7);
-            const shadowColor = getCSSVariableAsRGB('--foreground', 0.1);
+            // Get theme colors - transparent background with blur
+            const bgColor = getCSSVariableAsRGB('--background', 0.4);
+            const borderColor = getCSSVariableAsRGB('--border', 1);
+            const shadowColor = getCSSVariableAsRGB('--foreground', 0.15);
             
             Object.assign(trackingIndicator.style, {
                 position: 'fixed',
@@ -85,9 +85,10 @@ export default defineContentScript({
                 pointerEvents: 'auto',
                 borderRadius: '8px',
                 background: bgColor,
-                backdropFilter: 'blur(10px)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
                 border: `2px solid ${borderColor}`,
-                boxShadow: `0 4px 12px ${shadowColor}, inset 0 0 20px ${shadowColor}`,
+                boxShadow: `0 4px 12px ${shadowColor}`,
                 transition: 'all 0.3s ease',
                 cursor: 'pointer'
             });
@@ -96,16 +97,16 @@ export default defineContentScript({
             trackingIndicator.addEventListener('mouseenter', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1.05)';
-                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.9);
-                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.9);
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.55);
+                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
                 }
             });
 
             trackingIndicator.addEventListener('mouseleave', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1)';
-                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.8);
-                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.7);
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.4);
+                    trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
                 }
             });
 
@@ -159,13 +160,12 @@ export default defineContentScript({
                 return;
             }
 
-            // Show minimap
+            // Show minimap - transparent blurry background
             trackingIndicator.style.opacity = '1';
-            
-            // Use theme colors
-            trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.8);
-            trackingIndicator.style.backdropFilter = 'blur(10px)';
-            trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 0.7);
+            trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.4);
+            trackingIndicator.style.backdropFilter = 'blur(12px)';
+            trackingIndicator.style.WebkitBackdropFilter = 'blur(12px)';
+            trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
 
             // Render minimap SVG
             const svgContent = renderMinimapSVG(currentTreeNodes, currentActiveNodeId);
@@ -262,9 +262,9 @@ export default defineContentScript({
             // Start building SVG
             let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" style="display: block;">`;
             
-            // Get shadow color for filter
-            const shadowColor = getCSSVariableAsRGB('--foreground', 0.3);
-            
+            // Get shadow color for filter - minimal transparency for depth
+            const shadowColor = getCSSVariableAsRGB('--foreground', 0.2);
+
             // Add definitions for filters and animations
             svgContent += `
                 <defs>
@@ -302,31 +302,30 @@ export default defineContentScript({
                         const midY = parentY + (childY - parentY) / 2;
                         const pathData = `M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`;
                         const isActive = node.id === activeNodeId;
-                        const strokeColor = isActive 
-                            ? getCSSVariableAsRGB('--primary', 0.9)
-                            : getCSSVariableAsRGB('--foreground', 0.5);
+                        const strokeColor = isActive
+                            ? getCSSVariableAsRGB('--primary', 1)
+                            : getCSSVariableAsRGB('--muted-foreground', 1);
                         svgContent += `<path d="${pathData}" fill="none" stroke="${strokeColor}" stroke-width="${isActive ? '2' : '1.5'}" class="blur-fade-in"/>`;
                     }
                 }
             });
 
-            // Draw nodes as circles on top of edges
+            // Draw nodes as circles
             nodes.forEach(node => {
                 const pos = nodePositions[node.id];
                 if (pos) {
                     const isActive = node.id === activeNodeId;
                     const isRoot = node.parentId === null;
+                    const outlineColor = getCSSVariableAsRGB('--muted-foreground', 1);
                     let fillColor;
                     if (isActive) {
                         fillColor = getCSSVariableAsRGB('--primary', 1);
-                    } else if (isRoot) {
-                        fillColor = getCSSVariableAsRGB('--muted-foreground', 1);
                     } else {
-                        fillColor = getCSSVariableAsRGB('--muted-foreground', 1);
+                        fillColor = 'rgb(255, 255, 255)';
                     }
-                    const borderColor = getCSSVariableAsRGB('--border', 1);
+                    const strokeColor = isActive ? getCSSVariableAsRGB('--primary', 1) : outlineColor;
                     const radius = 6;
-                    svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="${borderColor}" stroke-width="0.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
+                    svgContent += `<circle cx="${pos.x + offsetX}" cy="${pos.y + offsetY}" r="${radius}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="1.5" filter="url(#nodeShadow)" class="blur-fade-in"/>`;
                 }
             });
 

@@ -478,21 +478,29 @@ export default defineBackground(() => {
             // Store the selected text and open sidepanel
             lastSelectedText = message.selectedText || '';
             console.log("Stored selected text:", lastSelectedText);
-            if (sender.tab?.windowId) {
-                console.log('[Background] Opening sidepanel for window:', sender.tab.windowId);
+            const tabId = sender.tab?.id;
+            const windowId = sender.tab?.windowId;
+            if (windowId) {
+                console.log('[Background] Opening sidepanel for window:', windowId);
                 // @ts-ignore
-                browser.sidePanel.open({ windowId: sender.tab.windowId }).then(() => {
+                browser.sidePanel.open({ windowId }).then(() => {
                     console.log('[Background] Sidepanel opened successfully');
-                    
-                    // Send message to sidepanel to switch to Wikipedia view
-                    setTimeout(() => {
+                    // Update sidepanel with current tab's tree and ensure correct view
+                    const updatePanel = () => {
+                        if (tabId) {
+                            updateSidepanelForTab(tabId);
+                            browser.runtime.sendMessage({
+                                messageType: MessageType.modeChanged,
+                                mode: BrowsingMode.TRACKING,
+                                tabId
+                            }).catch(() => {});
+                        }
                         browser.runtime.sendMessage({
                             messageType: MessageType.openSidePanel,
                             selectedText: lastSelectedText
-                        }).catch((error) => {
-                            console.log("Could not send message to sidepanel:", error);
-                        });
-                    }, 100); // Small delay to ensure sidepanel is loaded
+                        }).catch(() => {});
+                    };
+                    setTimeout(updatePanel, 300);
                 }).catch((error: any) => {
                     console.error('[Background] Failed to open sidepanel:', error);
                 });

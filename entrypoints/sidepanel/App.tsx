@@ -51,6 +51,8 @@ function AppContent() {
                 i18n.changeLanguage(message.content)
             } else if (message.messageType == MessageType.changeTheme) {
                 toggleTheme(message.content)
+            } else if (message.messageType === MessageType.openSidePanel) {
+                setSidebarType(SidebarType.home);
             } else if (message.messageType === MessageType.modeChanged) {
                 // Update current mode
                 console.log('[Sidepanel] Mode changed to:', message.mode);
