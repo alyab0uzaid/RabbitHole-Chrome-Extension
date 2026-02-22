@@ -70,8 +70,8 @@ export default defineContentScript({
             trackingIndicator = document.createElement('div');
             trackingIndicator.id = 'rabbithole-tracking-indicator';
             
-            // Get theme colors - transparent background with blur
-            const bgColor = getCSSVariableAsRGB('--background', 0.4);
+            // Get theme colors - semi-opaque background with blur
+            const bgColor = getCSSVariableAsRGB('--background', 0.7);
             const borderColor = getCSSVariableAsRGB('--border', 1);
             const shadowColor = getCSSVariableAsRGB('--foreground', 0.15);
             
@@ -83,7 +83,7 @@ export default defineContentScript({
                 height: '150px',
                 zIndex: '999999',
                 pointerEvents: 'auto',
-                borderRadius: '8px',
+                borderRadius: '4px',
                 background: bgColor,
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
@@ -97,7 +97,7 @@ export default defineContentScript({
             trackingIndicator.addEventListener('mouseenter', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1.05)';
-                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.55);
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.85);
                     trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
                 }
             });
@@ -105,7 +105,7 @@ export default defineContentScript({
             trackingIndicator.addEventListener('mouseleave', () => {
                 if (trackingIndicator) {
                     trackingIndicator.style.transform = 'scale(1)';
-                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.4);
+                    trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.7);
                     trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
                 }
             });
@@ -160,9 +160,9 @@ export default defineContentScript({
                 return;
             }
 
-            // Show minimap - transparent blurry background
+            // Show minimap - semi-opaque blurry background
             trackingIndicator.style.opacity = '1';
-            trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.4);
+            trackingIndicator.style.background = getCSSVariableAsRGB('--background', 0.7);
             trackingIndicator.style.backdropFilter = 'blur(12px)';
             trackingIndicator.style.WebkitBackdropFilter = 'blur(12px)';
             trackingIndicator.style.borderColor = getCSSVariableAsRGB('--border', 1);
