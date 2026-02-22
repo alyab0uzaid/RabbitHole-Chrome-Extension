@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import { useMemo } from 'react';
 import { ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { NodeTypes } from '@xyflow/react';
@@ -15,8 +15,6 @@ interface TreePreviewFlowProps {
 }
 
 export default function TreePreviewFlow({ nodes }: TreePreviewFlowProps) {
-  const reactFlowRef = useRef<any>(null);
-
   const { nodes: flowNodes, edges: flowEdges } = useMemo(
     () =>
       convertToFlowNodes(nodes, null, {
@@ -27,26 +25,17 @@ export default function TreePreviewFlow({ nodes }: TreePreviewFlowProps) {
     [nodes]
   );
 
-  useEffect(() => {
-    if (reactFlowRef.current?.fitView && flowNodes.length > 0) {
-      reactFlowRef.current.fitView({
-        padding: 0.3,
-        duration: 0
-      });
-    }
-  }, [flowNodes]);
-
   if (nodes.length === 0) return null;
 
   return (
     <div className="w-full h-full min-w-[160px] min-h-[100px]">
       <ReactFlow
-        ref={reactFlowRef}
-        nodes={flowNodes}
+        nodes={flowNodes as any}
         edges={flowEdges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitViewOptions={{ padding: 0.3, maxZoom: 0.75 }}
+        maxZoom={0.75}
         proOptions={{ hideAttribution: true }}
         nodesDraggable={false}
         nodesConnectable={false}

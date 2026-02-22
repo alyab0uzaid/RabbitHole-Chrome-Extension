@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTree } from '@/lib/tree-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -30,12 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { SavedTree } from "@/lib/tree-types";
 import TreePreviewFlow from "@/components/tree/TreePreviewFlow";
 
 interface SessionsPageProps {
@@ -58,6 +53,58 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [treeToRename, setTreeToRename] = useState<string | null>(null);
   const [newTreeName, setNewTreeName] = useState('');
+
+  // Cursor-following preview
+  const [hoveredTree, setHoveredTree] = useState<SavedTree | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+  const previewTopRef = useRef(0);
+  const targetXRef = useRef(0);
+  const currentXRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  const stopRaf = useCallback(() => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
+
+  const animateLerp = useCallback(() => {
+    const diff = targetXRef.current - currentXRef.current;
+    if (Math.abs(diff) < 0.15) {
+      currentXRef.current = targetXRef.current;
+      rafRef.current = null;
+    } else {
+      currentXRef.current += diff * 0.12;
+      rafRef.current = requestAnimationFrame(animateLerp);
+    }
+    if (previewRef.current) {
+      previewRef.current.style.transform = `translateX(calc(${currentXRef.current}px - 50%))`;
+    }
+  }, []);
+
+  const handleRowMouseEnter = useCallback((e: React.MouseEvent<HTMLTableRowElement>, tree: SavedTree) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const previewHeight = 160;
+    const gap = 8;
+    const hasSpaceAbove = rect.top > previewHeight + gap;
+    previewTopRef.current = hasSpaceAbove ? rect.top - previewHeight - gap : rect.bottom + gap;
+    targetXRef.current = e.clientX;
+    currentXRef.current = e.clientX;
+    setHoveredTree(tree);
+  }, []);
+
+  const handleRowMouseMove = useCallback((e: React.MouseEvent<HTMLTableRowElement>) => {
+    targetXRef.current = e.clientX;
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(animateLerp);
+    }
+  }, [animateLerp]);
+
+  const handleRowMouseLeave = useCallback(() => {
+    stopRaf();
+    setHoveredTree(null);
+  }, [stopRaf]);
 
   const handleLoadSession = (treeId: string) => {
     console.log('[Rabbit Holes] Loading tree:', treeId);
@@ -262,7 +309,6 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                )}
                     </div>
 
-            <TooltipProvider delayDuration={300}>
             <div className="rounded-lg shadow-sm border border-border overflow-x-auto">
               <Table style={{tableLayout: 'fixed', width: '100%'}}>
                 <TableHeader>
@@ -319,9 +365,13 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  <TableBody>
                    {filteredAndSortedTrees.length > 0 ? (
                      filteredAndSortedTrees.map((tree) => (
-                       <Tooltip key={tree.id}>
-                         <TooltipTrigger asChild>
-                       <TableRow className="hover:bg-table-header">
+                       <TableRow
+                         key={tree.id}
+                         className="hover:bg-table-header"
+                         onMouseEnter={(e) => handleRowMouseEnter(e, tree)}
+                         onMouseMove={handleRowMouseMove}
+                         onMouseLeave={handleRowMouseLeave}
+                       >
                         <TableCell className="py-2 overflow-hidden transition-[width,opacity,padding] duration-300 ease-in-out" style={{width: isEditMode ? '1.75rem' : '0', opacity: isEditMode ? 1 : 0, paddingLeft: isEditMode ? '0.5rem' : '0', paddingRight: '0'}}>
                           <div className="flex-shrink-0">
                             <Checkbox
@@ -332,7 +382,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             />
                           </div>
                         </TableCell>
-                        <TableCell 
+                        <TableCell
                           className={`cursor-pointer py-2 ${!isEditMode ? 'pl-4' : ''}`}
                           onClick={() => handleLoadSession(tree.id)}
                         >
@@ -346,7 +396,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                              }).replace(',', ' at')}
                            </div>
                          </TableCell>
-                        <TableCell 
+                        <TableCell
                           className="cursor-pointer py-2"
                           onClick={() => handleLoadSession(tree.id)}
                         >
@@ -354,7 +404,7 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                             {tree.name || 'Unknown'}
                           </div>
                         </TableCell>
-                        <TableCell 
+                        <TableCell
                           className="cursor-pointer py-2 pr-2 overflow-visible"
                           onClick={() => handleLoadSession(tree.id)}
                         >
@@ -367,8 +417,8 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                      <TableCell className="py-2 px-2" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               className="h-8 w-8 p-0 text-text-muted hover:text-foreground hover:bg-table-hover"
                             >
                               <span className="sr-only">Open menu</span>
@@ -398,19 +448,6 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                         </DropdownMenu>
                       </TableCell>
                        </TableRow>
-                         </TooltipTrigger>
-                         <TooltipContent side="top" className="p-0 border-0 bg-transparent shadow-none">
-                           <div className="rounded-lg border border-border bg-background shadow-lg overflow-hidden w-64 h-40">
-                             {tree.nodes.length > 0 ? (
-                               <TreePreviewFlow nodes={tree.nodes} />
-                             ) : (
-                               <div className="w-full h-full flex items-center justify-center">
-                                 <span className="text-xs text-muted-foreground">Empty</span>
-                               </div>
-                             )}
-                           </div>
-                         </TooltipContent>
-                       </Tooltip>
                      ))
                    ) : (
                      <TableRow>
@@ -427,7 +464,6 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
                  </TableBody>
               </Table>
                 </div>
-            </TooltipProvider>
           </div>
         )}
       </div>
@@ -497,6 +533,32 @@ export function SessionsPage({ onSwitchToTree }: SessionsPageProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cursor-following tree preview */}
+      {hoveredTree && (
+        <div
+          ref={previewRef}
+          style={{
+            position: 'fixed',
+            top: previewTopRef.current,
+            left: 0,
+            transform: `translateX(calc(${currentXRef.current}px - 50%))`,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            width: '16rem',
+            height: '10rem',
+          }}
+          className="rounded-lg border border-border bg-background shadow-lg overflow-hidden"
+        >
+          {hoveredTree.nodes.length > 0 ? (
+            <TreePreviewFlow nodes={hoveredTree.nodes} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-xs text-muted-foreground">Empty</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
