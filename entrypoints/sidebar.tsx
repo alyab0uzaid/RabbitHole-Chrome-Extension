@@ -25,7 +25,7 @@ const Sidebar = (
         <div className="flex items-center justify-between px-6 py-4 bg-background">
             {/* Left: Branding */}
             <div className="flex items-center">
-                <span className="text-lg font-semibold text-foreground" style={{ fontFamily: 'Montaga, serif' }}>RabbitHole</span>
+                <span className="text-lg font-semibold text-primary" style={{ fontFamily: 'Montaga, serif' }}>RabbitHole</span>
             </div>
 
             {/* Center: Navigation */}

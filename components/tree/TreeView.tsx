@@ -317,7 +317,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   return (
     <div className="w-full h-full flex flex-col">
       {/* Clean Header */}
-      <div className="px-6 py-5 border-b border-border bg-background">
+      <div className="px-6 pt-2 pb-3 border-b border-border bg-background">
         <div className="space-y-1">
           {isEditingTitle ? (
             <div className="flex items-center gap-3">
@@ -339,7 +339,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
                     handleCancelEdit();
                   }
                 }}
-                className="text-2xl font-medium h-10 border-0 border-b border-primary/50 focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none bg-transparent px-0"
+                className="text-3xl font-medium h-10 border-0 border-b border-primary/50 focus-visible:border-primary focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none bg-transparent px-0"
                 style={{ fontFamily: 'var(--font-serif)' }}
                 autoFocus
               />
@@ -350,7 +350,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
               className="group/title flex items-center gap-2 text-left hover:opacity-80 transition-opacity"
             >
               <h1 
-                className="text-2xl font-medium text-foreground" 
+                className="text-3xl font-medium text-foreground" 
                 style={{ fontFamily: 'var(--font-serif)' }}
               >
                 {sessionName}
