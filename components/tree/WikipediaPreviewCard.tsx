@@ -11,31 +11,19 @@ interface PageData {
   thumbnail?: { source: string; width: number; height: number };
 }
 
-interface TextMetrics {
-  splitIdx: number;
-  lineHeight: number;
-}
-
-function renderWithBold(text: string, title: string) {
-  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'i');
-  return text.split(regex).map((part, i) =>
-    part.toLowerCase() === title.toLowerCase() ? <strong key={i}>{part}</strong> : part
-  );
-}
-
 export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [textMetrics, setTextMetrics] = useState<TextMetrics | null>(null);
+  const [lineHeight, setLineHeight] = useState(19.5);
+  const [lastLineEndsWithPeriod, setLastLineEndsWithPeriod] = useState(false);
   const measureRef = useRef<HTMLDivElement>(null);
+  const sidewaysClipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setTextMetrics(null);
 
     const fetchPreview = async () => {
       try {
@@ -60,50 +48,47 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
     return () => { cancelled = true; };
   }, [title]);
 
-  const hasImage = !!pageData?.thumbnail;
-  const thumb = pageData?.thumbnail;
-  const isWider = thumb && thumb.width > thumb.height;
-  const isSideways = hasImage && !isWider;
-
-  // After each render, measure exactly where line N ends so we can split the text.
-  // Binary-search on char index: find the last char whose range still fits within
-  // LINES_BEFORE * lineHeight pixels. Runs before browser paint (useLayoutEffect).
+  // Measure actual rendered line height from a hidden single-line div
   useLayoutEffect(() => {
-    const el = measureRef.current;
+    if (!measureRef.current) return;
+    const lh = parseFloat(window.getComputedStyle(measureRef.current).lineHeight);
+    if (!isNaN(lh) && lh > 0) setLineHeight(lh);
+  }, [pageData?.extract]);
+
+  // Sideways only: find last visible character to see if last line ends with a period
+  useLayoutEffect(() => {
+    const clip = sidewaysClipRef.current;
     const extract = pageData?.extract;
-    if (!el || !extract) { setTextMetrics(null); return; }
-
-    const textNode = el.firstChild;
-    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) { setTextMetrics(null); return; }
-
-    const lh = parseFloat(window.getComputedStyle(el).lineHeight);
-    if (isNaN(lh) || lh <= 0) { setTextMetrics(null); return; }
-
-    const LINES_BEFORE = isSideways ? 17 : 5;
-    const containerTop = el.getBoundingClientRect().top;
-    const targetBottom = containerTop + LINES_BEFORE * lh + 0.5; // +0.5 for float precision
-
+    if (!clip || !extract || !clip.isConnected) return;
+    const textEl = clip.querySelector('p');
+    if (!textEl) return;
+    const textNode = textEl.firstChild;
+    if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
+    const containerRect = clip.getBoundingClientRect();
     const range = document.createRange();
-    let lo = 0, hi = extract.length, result = 0;
-
+    let lo = 0;
+    let hi = extract.length;
+    let lastVisible = 0;
     while (lo <= hi) {
       const mid = Math.floor((lo + hi) / 2);
       range.setStart(textNode, 0);
       range.setEnd(textNode, mid);
-      if (range.getBoundingClientRect().bottom <= targetBottom) {
-        result = mid;
+      const rect = range.getBoundingClientRect();
+      if (rect.bottom <= containerRect.bottom + 1) {
+        lastVisible = mid;
         lo = mid + 1;
       } else {
         hi = mid - 1;
       }
     }
+    const char = lastVisible > 0 ? extract[lastVisible - 1] : '';
+    setLastLineEndsWithPeriod(char === '.');
+  }, [pageData?.extract, lineHeight]);
 
-    // Snap backward to the nearest word boundary so we never split mid-word.
-    const spacePos = extract.lastIndexOf(' ', result);
-    const splitIdx = spacePos <= 0 ? 0 : spacePos + 1;
-
-    setTextMetrics({ splitIdx, lineHeight: lh });
-  }, [pageData?.extract, isSideways]);
+  const hasImage = !!pageData?.thumbnail;
+  const thumb = pageData?.thumbnail;
+  const isWider = thumb && thumb.width > thumb.height;
+  const isSideways = hasImage && !isWider;
 
   if (loading) {
     return (
@@ -122,70 +107,96 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   }
 
   const extract = pageData.extract;
-  const LINES_BEFORE = isSideways ? 17 : 5;
-  const lh = textMetrics?.lineHeight ?? 19.5; // text-xs leading-relaxed default
-  const splitIdx = textMetrics?.splitIdx ?? null;
 
-  const firstPart = splitIdx !== null ? extract.slice(0, splitIdx) : '';
-  const lastPart  = splitIdx !== null ? extract.slice(splitIdx)  : extract;
+  // Sideways card: match Wikipedia — 450×250, text left, image right 203×250, gradient at bottom of text
+  if (isSideways) {
+    const sidewaysLines = 16;
+    const textHeight = sidewaysLines * lineHeight;
 
-  const cardStyle = isSideways
-    ? { width: 450, height: 250 }
-    : { width: 320, maxHeight: 320 };
+    return (
+      <div
+        className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-row h-[250px] w-[450px]"
+      >
+        {/* Text block — left side, flex-1 */}
+        <div className="flex-1 min-w-0 flex flex-col p-4 overflow-hidden relative">
+          <div
+            ref={measureRef}
+            className="text-xs leading-relaxed text-[#202122] absolute opacity-0 pointer-events-none select-none"
+            style={{ whiteSpace: 'nowrap' }}
+            aria-hidden
+          >
+            M
+          </div>
+          <div ref={sidewaysClipRef} style={{ height: textHeight, overflow: 'hidden' }}>
+            <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
+              {extract}
+            </p>
+          </div>
+          {/* Right-side gradient on the last line only — opaque so it’s visible */}
+          {!lastLineEndsWithPeriod && (
+            <div
+              className="absolute right-0 pointer-events-none"
+              style={{
+                bottom: '1rem',
+                height: lineHeight,
+                width: '7rem',
+                background: 'linear-gradient(to right, transparent 0%, transparent 40%, white 70%)',
+                zIndex: 10,
+              }}
+              aria-hidden
+            />
+          )}
+        </div>
+        {/* Image — right side, fixed 203×250 */}
+        <div className="w-[203px] h-[250px] flex-shrink-0 overflow-hidden bg-[#f8f9fa]">
+          <img
+            src={thumb!.source}
+            alt=""
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
+      </div>
+    );
+  }
 
-  // The text block is shared between both layouts; only the wrapper differs.
-  const textBlock = (
-    <div style={{ position: 'relative' }}>
-      {/* Invisible measurement node — same font/width as the real paragraphs.
-          position:absolute keeps it out of flow; visibility:hidden lets Range
-          measure it while keeping it off-screen. */}
+  // Tall card (image on top or no image)
+  const totalLines = 5;
+  const containerH = totalLines * lineHeight;
+
+  const textContent = (
+    <div style={{ position: 'relative', width: '100%', minWidth: 0 }}>
       <div
         ref={measureRef}
         className="text-xs leading-relaxed text-[#202122]"
-        style={{
-          position: 'absolute',
-          visibility: 'hidden',
-          top: 0,
-          left: 0,
-          right: 0,
-          pointerEvents: 'none',
-          whiteSpace: 'normal',
-        }}
+        style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', pointerEvents: 'none' }}
         aria-hidden
       >
-        {extract}
+        M
       </div>
-
-      {/* Lines 1–(N-1): normal wrapping, clipped to exact height */}
-      <p
-        className="text-xs text-[#202122] leading-relaxed text-left"
-        style={{ height: `${LINES_BEFORE * lh}px`, overflow: 'hidden', margin: 0 }}
-      >
-        {firstPart ? renderWithBold(firstPart, title) : null}
-      </p>
-
-      {/* Line N: single non-wrapping line, clipped + faded on the right */}
-      <div style={{ position: 'relative', overflow: 'hidden', height: `${lh}px` }}>
-        <p
-          className="text-xs text-[#202122] leading-relaxed text-left"
-          style={{ whiteSpace: 'nowrap', margin: 0 }}
-        >
-          {lastPart ? renderWithBold(lastPart, title) : null}
+      <div style={{ height: `${containerH}px`, overflow: 'hidden' }}>
+        <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
+          {extract}
         </p>
-        {/* Gradient: opaque white on the right, transparent toward the left */}
-        <div
-          className="pointer-events-none bg-gradient-to-l from-white to-transparent"
-          style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '8rem' }}
-          aria-hidden
-        />
       </div>
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          right: 0,
+          height: `${lineHeight}px`,
+          width: '8rem',
+          background: 'linear-gradient(to right, transparent, white)',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+        aria-hidden
+      />
     </div>
   );
 
   return (
     <div
-      className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white"
-      style={cardStyle}
+      className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white w-80 max-h-80"
     >
       {hasImage && isWider ? (
         <div className="w-full overflow-hidden border-b border-[#c8ccd1]">
@@ -198,24 +209,8 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
         </div>
       ) : null}
 
-      <div className={isSideways ? 'flex h-full' : 'p-3'}>
-        {hasImage && !isWider && (
-          <div className="flex-shrink-0 overflow-hidden self-stretch" style={{ width: 203 }}>
-            <img
-              src={thumb!.source}
-              alt=""
-              className="w-full h-full min-h-[250px] object-cover object-center"
-            />
-          </div>
-        )}
-
-        {isSideways ? (
-          <div className="flex-1 p-4 overflow-hidden min-w-0">
-            {textBlock}
-          </div>
-        ) : (
-          textBlock
-        )}
+      <div className="p-3">
+        {textContent}
       </div>
     </div>
   );
