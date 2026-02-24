@@ -1,5 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+
+const PREVIEW_ENTER_STYLE = `
+@keyframes previewFadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.preview-card-enter {
+  animation: previewFadeInUp 0.2s ease-out forwards;
+}
+`;
 
 interface WikipediaPreviewCardProps {
   title: string;
@@ -100,13 +109,7 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   const isWider = thumb && thumb.width > thumb.height;
   const isSideways = hasImage && !isWider;
 
-  if (loading) {
-    return (
-      <div className="w-80 flex items-center justify-center py-12 bg-white rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
-        <Loader2 className="w-5 h-5 animate-spin text-[#54595d]" />
-      </div>
-    );
-  }
+  if (loading) return null;
 
   if (error || !pageData?.extract) {
     return (
@@ -124,9 +127,12 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
     const textHeight = sidewaysLines * lineHeight;
 
     return (
-      <div
-        className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-row h-[250px] w-[450px]"
-      >
+      <>
+        <style>{PREVIEW_ENTER_STYLE}</style>
+        <div className="preview-card-enter">
+          <div
+            className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-row h-[250px] w-[450px]"
+          >
         {/* Text block — left side, flex-1 */}
         <div className="flex-1 min-w-0 flex flex-col p-4 overflow-hidden relative">
           <div
@@ -168,7 +174,9 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
             className="w-full h-full object-cover object-center"
           />
         </div>
-      </div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -180,10 +188,13 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   const tallTextHeight = tallLines * lineHeight;
 
   return (
-    <div
-      className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-col w-[320px]"
-      style={!(hasImage && isWider) ? { maxHeight: NO_IMAGE_MAX_HEIGHT } : undefined}
-    >
+    <>
+      <style>{PREVIEW_ENTER_STYLE}</style>
+      <div className="preview-card-enter">
+        <div
+          className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-col w-[320px]"
+          style={!(hasImage && isWider) ? { maxHeight: NO_IMAGE_MAX_HEIGHT } : undefined}
+        >
       {hasImage && isWider ? (
         <div
           className="w-full flex-shrink-0 overflow-hidden bg-[#f8f9fa]"
@@ -234,6 +245,8 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
           />
         )}
       </div>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
