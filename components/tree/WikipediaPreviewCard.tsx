@@ -11,6 +11,14 @@ interface PageData {
   thumbnail?: { source: string; width: number; height: number };
 }
 
+function renderExtractWithBold(extract: string, title: string) {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`\\b(${escaped})\\b`, 'i');
+  const parts = extract.split(regex);
+  if (parts.length === 3) return <>{parts[0]}<strong>{parts[1]}</strong>{parts[2]}</>;
+  return extract;
+}
+
 export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   const [pageData, setPageData] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -19,6 +27,7 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
   const [lastLineEndsWithPeriod, setLastLineEndsWithPeriod] = useState(false);
   const measureRef = useRef<HTMLDivElement>(null);
   const sidewaysClipRef = useRef<HTMLDivElement>(null);
+  const tallClipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,12 +64,13 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
     if (!isNaN(lh) && lh > 0) setLineHeight(lh);
   }, [pageData?.extract]);
 
-  // Sideways only: find last visible character to see if last line ends with a period
+  // Find last visible character (sideways or tall) to see if last line ends with a period
   useLayoutEffect(() => {
-    const clip = sidewaysClipRef.current;
     const extract = pageData?.extract;
-    if (!clip || !extract || !clip.isConnected) return;
-    const textEl = clip.querySelector('p');
+    if (!extract) return;
+    const clip = sidewaysClipRef.current?.isConnected ? sidewaysClipRef.current : tallClipRef.current?.isConnected ? tallClipRef.current : null;
+    if (!clip) return;
+    const textEl = clip.querySelector('[data-measure]');
     if (!textEl) return;
     const textNode = textEl.firstChild;
     if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
@@ -127,9 +137,12 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
           >
             M
           </div>
-          <div ref={sidewaysClipRef} style={{ height: textHeight, overflow: 'hidden' }}>
-            <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
+          <div ref={sidewaysClipRef} style={{ height: textHeight, overflow: 'hidden', position: 'relative' }}>
+            <p data-measure className="text-xs text-[#202122] leading-relaxed text-left m-0 absolute inset-0 invisible pointer-events-none" aria-hidden>
               {extract}
+            </p>
+            <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
+              {renderExtractWithBold(extract, title)}
             </p>
           </div>
           {/* Right-side gradient on the last line only — opaque so it’s visible */}
@@ -159,58 +172,67 @@ export function WikipediaPreviewCard({ title }: WikipediaPreviewCardProps) {
     );
   }
 
-  // Tall card (image on top or no image)
-  const totalLines = 5;
-  const containerH = totalLines * lineHeight;
-
-  const textContent = (
-    <div style={{ position: 'relative', width: '100%', minWidth: 0 }}>
-      <div
-        ref={measureRef}
-        className="text-xs leading-relaxed text-[#202122]"
-        style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', pointerEvents: 'none' }}
-        aria-hidden
-      >
-        M
-      </div>
-      <div style={{ height: `${containerH}px`, overflow: 'hidden' }}>
-        <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
-          {extract}
-        </p>
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          height: `${lineHeight}px`,
-          width: '8rem',
-          background: 'linear-gradient(to right, transparent, white)',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }}
-        aria-hidden
-      />
-    </div>
-  );
+  // Tall card: image 190px on top, text below; no-image cards max 200px, same gradient behavior
+  const TALL_CARD_WIDTH = 320;
+  const TALL_IMAGE_HEIGHT = 190;
+  const NO_IMAGE_MAX_HEIGHT = 200;
+  const tallLines = hasImage && isWider ? 6 : 8;
+  const tallTextHeight = tallLines * lineHeight;
 
   return (
     <div
-      className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white w-80 max-h-80"
+      className="overflow-hidden rounded border border-[#a2a9b1] shadow-[0_2px_4px_rgba(0,0,0,0.15)] bg-white flex flex-col w-[320px]"
+      style={!(hasImage && isWider) ? { maxHeight: NO_IMAGE_MAX_HEIGHT } : undefined}
     >
       {hasImage && isWider ? (
-        <div className="w-full overflow-hidden border-b border-[#c8ccd1]">
+        <div
+          className="w-full flex-shrink-0 overflow-hidden bg-[#f8f9fa]"
+          style={{ height: TALL_IMAGE_HEIGHT }}
+        >
           <img
             src={thumb!.source}
             alt=""
-            className="w-full h-auto block object-cover object-center"
-            style={{ maxHeight: 160 }}
+            className="w-full h-full object-cover object-center block"
           />
         </div>
       ) : null}
 
-      <div className="p-3">
-        {textContent}
+      <div
+        className="flex flex-col p-4 relative flex-shrink-0"
+        style={{
+          minHeight: tallTextHeight,
+          ...(!(hasImage && isWider) ? { maxHeight: NO_IMAGE_MAX_HEIGHT - 32 } : {}),
+        }}
+      >
+        <div
+          ref={measureRef}
+          className="text-xs leading-relaxed text-[#202122] absolute opacity-0 pointer-events-none select-none"
+          style={{ whiteSpace: 'nowrap' }}
+          aria-hidden
+        >
+          M
+        </div>
+        <div ref={tallClipRef} style={{ height: tallTextHeight, overflow: 'hidden', position: 'relative' }}>
+          <p data-measure className="text-xs text-[#202122] leading-relaxed text-left m-0 absolute inset-0 invisible pointer-events-none" aria-hidden>
+            {extract}
+          </p>
+          <p className="text-xs text-[#202122] leading-relaxed text-left m-0">
+            {renderExtractWithBold(extract, title)}
+          </p>
+        </div>
+        {!lastLineEndsWithPeriod && (
+          <div
+            className="absolute right-0 pointer-events-none"
+            style={{
+              bottom: '1rem',
+              height: lineHeight,
+              width: '10rem',
+              background: 'linear-gradient(to right, transparent 0%, transparent 40%, white 70%)',
+              zIndex: 10,
+            }}
+            aria-hidden
+          />
+        )}
       </div>
     </div>
   );
