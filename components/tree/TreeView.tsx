@@ -1,21 +1,21 @@
-import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   ReactFlow,
   Node,
   Edge,
   Controls,
-  MiniMap,
   ConnectionLineType,
-  Panel,
-  useReactFlow
+  useViewport,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useTree } from '@/lib/tree-context';
 import { WikiTreeNode, SourceContextType } from '@/lib/tree-types';
 import WikiNode, { WikiNodeData } from './WikiNode';
 import type { NodeTypes } from '@xyflow/react';
-import { Network, Edit2 } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { HoveredNodeProvider, useHoveredNode } from './HoveredNodeContext';
+import { WikipediaPreviewCard } from './WikipediaPreviewCard';
 
 const nodeTypes: NodeTypes = {
   wikiNode: WikiNode
@@ -315,6 +315,138 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
   console.log('[TreeView] Rendering ReactFlow with', flowNodes.length, 'nodes');
 
   return (
+    <HoveredNodeProvider>
+      <TreeViewContent
+        flowNodes={flowNodes}
+        flowEdges={flowEdges}
+        handleNodeClick={handleNodeClick}
+        nodeTypes={nodeTypes}
+        getComputedColor={getComputedColor}
+        reactFlowInstance={reactFlowInstance}
+        sessionName={sessionName}
+        rootNode={rootNode}
+        treeNodes={treeNodes}
+        isEditingTitle={isEditingTitle}
+        editedTitle={editedTitle}
+        setEditedTitle={setEditedTitle}
+        handleSaveEdit={handleSaveEdit}
+        handleCancelEdit={handleCancelEdit}
+        handleStartEdit={handleStartEdit}
+      />
+    </HoveredNodeProvider>
+  );
+}
+
+/** Rendered inside ReactFlow so we can use useViewport(); scales the card with zoom and keeps it above the node. */
+function PreviewCardOverlay({
+  containerSize,
+  containerRef,
+}: {
+  containerSize: { width: number; height: number };
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { hoveredNode } = useHoveredNode();
+  const { x: viewportX, y: viewportY, zoom } = useViewport();
+  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setContainerRect(el.getBoundingClientRect());
+    const ro = new ResizeObserver(() => setContainerRect(el.getBoundingClientRect()));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [containerRef, viewportX, viewportY, zoom]);
+
+  const cardMaxW = 450;
+  const cardMaxH = 320;
+  const baseScale =
+    containerSize.width > 0 && containerSize.height > 0
+      ? Math.min(1, (containerSize.width * 0.85) / cardMaxW, (containerSize.height * 0.7) / cardMaxH)
+      : 1;
+  const scale = baseScale * zoom;
+
+  if (!hoveredNode) return null;
+
+  // Convert flow-space position to screen so the card stays above the node when zooming/panning
+  const flowCenterX = hoveredNode.flowX + hoveredNode.flowWidth / 2;
+  const flowTopY = hoveredNode.flowY;
+  const screenX = containerRect
+    ? flowCenterX * zoom + viewportX + containerRect.left
+    : hoveredNode.x;
+  const screenY = containerRect
+    ? flowTopY * zoom + viewportY + containerRect.top
+    : hoveredNode.y;
+
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 99999 }}
+    >
+      <div
+        className="pointer-events-auto"
+        style={{
+          position: 'fixed',
+          left: screenX,
+          top: Math.max(8, screenY - 8),
+          transform: `translate(-50%, -100%) scale(${scale})`,
+          transformOrigin: 'bottom center',
+        }}
+      >
+        <WikipediaPreviewCard title={hoveredNode.title} url={hoveredNode.url} />
+      </div>
+    </div>
+  );
+}
+
+function TreeViewContent({
+  flowNodes,
+  flowEdges,
+  handleNodeClick,
+  nodeTypes,
+  getComputedColor,
+  reactFlowInstance,
+  sessionName,
+  rootNode,
+  treeNodes,
+  isEditingTitle,
+  editedTitle,
+  setEditedTitle,
+  handleSaveEdit,
+  handleCancelEdit,
+  handleStartEdit,
+}: {
+  flowNodes: Node<WikiNodeData>[];
+  flowEdges: Edge[];
+  handleNodeClick: (event: React.MouseEvent, node: Node<WikiNodeData>) => void;
+  nodeTypes: NodeTypes;
+  getComputedColor: (cssVar: string, opacity?: number) => string;
+  reactFlowInstance: React.RefObject<any>;
+  sessionName: string;
+  rootNode: WikiTreeNode | undefined;
+  treeNodes: WikiTreeNode[];
+  isEditingTitle: boolean;
+  editedTitle: string;
+  setEditedTitle: (v: string) => void;
+  handleSaveEdit: () => void;
+  handleCancelEdit: () => void;
+  handleStartEdit: () => void;
+}) {
+  const treeContainerRef = useRef<HTMLDivElement>(null);
+  const [treeContainerSize, setTreeContainerSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const el = treeContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0]?.contentRect ?? { width: 0, height: 0 };
+      setTreeContainerSize({ width, height });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
     <div className="w-full h-full flex flex-col">
       {/* Clean Header */}
       <div className="px-6 pt-2 pb-3 border-b border-border bg-background">
@@ -371,7 +503,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
       </div>
       
       {/* Tree View */}
-      <div className="flex-1 relative">
+      <div ref={treeContainerRef} className="flex-1 relative min-h-0">
         <ReactFlow
           ref={reactFlowInstance}
           nodes={flowNodes}
@@ -415,6 +547,7 @@ export default function TreeView({ onNodeClick }: TreeViewProps = {}) {
             position="bottom-left"
             className="!border-border !bg-background/90 backdrop-blur-sm !shadow-lg [&_button]:!border-border [&_button]:!bg-background/90 [&_button]:hover:!bg-muted/50 [&_button]:!text-foreground" 
           />
+          <PreviewCardOverlay containerSize={treeContainerSize} containerRef={treeContainerRef} />
         </ReactFlow>
       </div>
     </div>

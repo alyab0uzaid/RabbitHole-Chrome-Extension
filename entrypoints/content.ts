@@ -66,6 +66,11 @@ export default defineContentScript({
         }
 
         function initializeMinimap() {
+            // Remove any existing minimap (prevents duplicates from cached scripts or double injection)
+            const existing = document.getElementById('rabbithole-tracking-indicator');
+            if (existing) existing.remove();
+            if (trackingIndicator) trackingIndicator = null;
+
             // Create tracking indicator (minimap container)
             trackingIndicator = document.createElement('div');
             trackingIndicator.id = 'rabbithole-tracking-indicator';
