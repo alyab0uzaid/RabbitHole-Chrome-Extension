@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { Trophy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -11,18 +12,24 @@ export default function HeroSection() {
         <section className="py-20">
             <div className="relative z-10 mx-auto w-full max-w-2xl px-6 lg:px-0">
                 <div className="relative text-center">
-                    <RabbitHoleLogo className="mx-auto" />
-                    <h1 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-semibold tracking-tight sm:text-5xl" style={{ fontFamily: 'var(--font-heading), Georgia, serif' }}>
-                        Map your Wikipedia journey
-                    </h1>
-                    <p className="text-muted-foreground mx-auto mb-6 mt-4 max-w-xl text-balance text-lg sm:text-xl">
-                        RabbitHole turns every article you visit into a visual tree. Preview pages on hover, follow your path, and never lose your place—all in one Chrome side panel.
+                    <div className="flex flex-col items-center gap-6">
+                        <RabbitHoleLogo className="mx-auto" />
+                        <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm ring-1 ring-primary/10">
+                            <Trophy className="size-3.5 shrink-0" />
+                            eHacks Hackathon Winner
+                        </span>
+                        <h1 className="mx-auto max-w-2xl text-balance text-4xl font-semibold tracking-tight sm:text-5xl" style={{ fontFamily: 'var(--font-heading), Georgia, serif' }}>
+                            Map your Wikipedia journey
+                        </h1>
+                    </div>
+                    <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-center text-lg">
+                        A tree that grows as you read. Every article becomes a branch. Your path is saved as you go, so you can revisit any rabbit hole anytime.
                     </p>
 
-                    <div className="w-full max-w-md mx-auto">
-                        <Button asChild variant="default" className="w-full">
+                    <div className="mt-8 flex justify-center">
+                        <Button asChild variant="default">
                             <Link href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
-                                <span className="text-nowrap">Add to Chrome</span>
+                                <span className="text-nowrap">Add to Browser</span>
                             </Link>
                         </Button>
                     </div>
