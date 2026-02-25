@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { Montaga } from "next/font/google";
 import "./globals.css";
+
+const montaga = Montaga({ weight: "400", subsets: ["latin"], variable: "--font-heading" });
 
 export const metadata: Metadata = {
   title: "RabbitHole – Map your Wikipedia journey",
@@ -12,10 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className="antialiased"
-      >
+    <html lang="en" className={montaga.variable}>
+      <body className="antialiased">
         {children}
       </body>
     </html>
