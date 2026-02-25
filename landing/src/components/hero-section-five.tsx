@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Trophy } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -14,11 +14,7 @@ export default function HeroSection() {
                 <div className="relative text-center">
                     <div className="flex flex-col items-center gap-6">
                         <RabbitHoleLogo className="mx-auto" />
-                        <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm ring-1 ring-primary/10">
-                            <Trophy className="size-3.5 shrink-0" />
-                            eHacks Hackathon Winner
-                        </span>
-                        <h1 className="mx-auto max-w-2xl text-balance text-4xl font-semibold tracking-tight sm:text-5xl" style={{ fontFamily: 'var(--font-heading), Georgia, serif' }}>
+                        <h1 className="mx-auto max-w-2xl text-balance text-4xl font-normal tracking-tight sm:text-5xl" style={{ fontFamily: 'var(--font-heading), Georgia, serif', textShadow: '0.015em 0 0 currentColor, -0.015em 0 0 currentColor, 0 0.015em 0 currentColor, 0 -0.015em 0 currentColor' }}>
                             Map your Wikipedia journey
                         </h1>
                     </div>
@@ -28,7 +24,8 @@ export default function HeroSection() {
 
                     <div className="mt-8 flex justify-center">
                         <Button asChild variant="default">
-                            <Link href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer">
+                            <Link href={CHROME_STORE_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2">
+                                <ExternalLink className="size-4 shrink-0" />
                                 <span className="text-nowrap">Add to Browser</span>
                             </Link>
                         </Button>
