@@ -48,6 +48,9 @@ stats-*.json
 # Chrome extension build
 chrome-mv3/
 public/
+# Landing site public assets (must be committed for deployment)
+!landing/public/
+!landing/public/**
 
 # Demo files (large media)
 demo/
