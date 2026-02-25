@@ -1,6 +1,4 @@
 {
   "framework": "nextjs",
-  "installCommand": "cd landing && npm install",
-  "buildCommand": "cd landing && npm run build",
-  "outputDirectory": "landing/.next"
+  "rootDirectory": "landing"
 }
