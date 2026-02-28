@@ -45,6 +45,14 @@ export default defineBackground(() => {
         }
     }).catch(err => console.error('[Background] Error loading tab sessions:', err));
 
+    // Initialize activeTabId on startup so node clicks work immediately after service worker restarts
+    browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+        if (tabs[0]?.id) {
+            activeTabId = tabs[0].id;
+            console.log('[Background] Initialized activeTabId on startup:', activeTabId);
+        }
+    }).catch(err => console.log('[Background] Could not initialize activeTabId on startup:', err));
+
     // Helper: Get or create session for a tab
     function getTabSession(tabId: number): TrackingState {
         if (!tabSessions.has(tabId)) {
@@ -281,11 +289,18 @@ export default defineBackground(() => {
         
         // Check if this tab already has a tree
         if (session.treeNodes.length > 0) {
-            // Tab already has a tree - just resume tracking
+            // Tab already has a tree - resume tracking
             console.log('[Background] Resuming tracking for tab', tabId, 'with existing tree of', session.treeNodes.length, 'nodes');
             session.isTracking = true;
             session.currentUrl = url;
             session.mode = BrowsingMode.TRACKING;
+            // Add the current article if it's not already in the tree.
+            // This handles the case where the user navigated to a new article while
+            // tracking was paused (e.g., left Wikipedia and came back).
+            const resumeTitle = getWikipediaArticleTitle(url);
+            if (resumeTitle) {
+                addTreeNode(tabId, resumeTitle, url);
+            }
         } else {
             // Start new tracking session for this tab
             console.log('[Background] Starting new tracking session for tab', tabId);
@@ -549,24 +564,51 @@ export default defineBackground(() => {
         } else if (message.messageType === MessageType.navigateToWikipedia) {
             // Navigate the currently active Wikipedia tab, or create new one if none exists
             console.log('[Background] Navigating to Wikipedia URL:', message.articleUrl);
-            
-            const session = getCurrentSession();
-            if (session && session.isTracking && activeTabId) {
-                // Navigate the currently active tracked tab
-                console.log('[Background] Navigating active Wikipedia tab:', activeTabId);
-                browser.tabs.update(activeTabId, { 
-                    url: message.articleUrl,
-                    active: true 
-                }).catch((error) => {
-                    console.error('[Background] Error navigating tab:', error);
-                });
-            } else {
-                // No active tracked tab, create new one
-                console.log('[Background] No active tracked tab, creating new Wikipedia tab');
-                browser.tabs.create({ url: message.articleUrl, active: true }).catch((error) => {
-                    console.error('[Background] Error creating tab:', error);
-                });
-            }
+
+            const tryNavigate = async () => {
+                // 1. activeTabId has a session with nodes → navigate it (resume if paused)
+                if (activeTabId) {
+                    const session = tabSessions.get(activeTabId);
+                    if (session && session.treeNodes.length > 0) {
+                        console.log('[Background] Navigating active Wikipedia tab:', activeTabId);
+                        session.isTracking = true;
+                        await browser.tabs.update(activeTabId, { url: message.articleUrl, active: true });
+                        return;
+                    }
+                }
+
+                // 2. activeTabId is null or has no session — find any tab with a tree
+                // (happens after service worker restarts when activeTabId resets to null)
+                for (const [tabId, session] of tabSessions.entries()) {
+                    if (session.treeNodes.length > 0) {
+                        console.log('[Background] Found Wikipedia session on tab', tabId, '— navigating it');
+                        session.isTracking = true;
+                        activeTabId = tabId;
+                        await browser.tabs.update(tabId, { url: message.articleUrl, active: true });
+                        return;
+                    }
+                }
+
+                // 3. No known session — check if the currently active tab is Wikipedia
+                const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+                const tab = tabs[0];
+                if (tab?.id && tab.url?.includes('wikipedia.org')) {
+                    console.log('[Background] Active tab is Wikipedia — navigating it');
+                    activeTabId = tab.id;
+                    getTabSession(tab.id).isTracking = true;
+                    await browser.tabs.update(tab.id, { url: message.articleUrl, active: true });
+                    return;
+                }
+
+                // 4. Last resort: create a new tab
+                console.log('[Background] No Wikipedia tab found — creating new tab');
+                await browser.tabs.create({ url: message.articleUrl, active: true });
+            };
+
+            tryNavigate().catch((error) => {
+                console.error('[Background] Error navigating to Wikipedia:', error);
+                browser.tabs.create({ url: message.articleUrl, active: true }).catch(() => {});
+            });
             // Don't return true or send response - fire and forget
         } else if (message.messageType === 'getTreeForMinimap') {
             // Content script requesting tree state for minimap

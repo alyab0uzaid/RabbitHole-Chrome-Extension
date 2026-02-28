@@ -50,6 +50,6 @@ export default function HeroSection() {
 
 const RabbitHoleLogo = ({ className }: { className?: string }) => (
     <div aria-hidden className={cn('relative flex items-center justify-center', className)}>
-        <Image src="/icon/rabbithole.png" alt="" width={56} height={56} className="size-12 drop-shadow-lg sm:size-14" />
+        <Image src="/newlogo.png" alt="" width={96} height={96} className="size-20 drop-shadow-lg sm:size-24" />
     </div>
 )
