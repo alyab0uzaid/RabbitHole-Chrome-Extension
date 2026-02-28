@@ -8,7 +8,7 @@ export default function FooterSection() {
                 <div className="flex flex-wrap items-center justify-between gap-6">
                     <div className="flex items-center gap-3">
                         <Link href="/" aria-label="RabbitHole home">
-                            <Image src="/newlogo.png" alt="RabbitHole" width={28} height={28} className="size-7" />
+                            <Image src="/icon/rabbithole.png" alt="RabbitHole" width={28} height={28} className="size-7" />
                         </Link>
                         <span className="text-muted-foreground text-sm">© {new Date().getFullYear()} RabbitHole</span>
                     </div>

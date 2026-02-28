@@ -34,7 +34,7 @@ export default function HeroSection() {
 
                 <div className="relative mt-12 overflow-hidden rounded-xl md:mt-16">
                     <video
-                        src="/demo.mp4"
+                        src="/demo3.mp4"
                         autoPlay
                         muted
                         loop
@@ -50,6 +50,6 @@ export default function HeroSection() {
 
 const RabbitHoleLogo = ({ className }: { className?: string }) => (
     <div aria-hidden className={cn('relative flex items-center justify-center', className)}>
-        <Image src="/newlogo.png" alt="" width={96} height={96} className="size-20 drop-shadow-lg sm:size-24" />
+        <Image src="/icon/rabbithole.png" alt="" width={56} height={56} className="size-12 drop-shadow-lg sm:size-14" />
     </div>
 )
